@@ -4,9 +4,12 @@ from collections import deque
 import numpy as np
 from PIL import Image
 
-SRC = r"C:\experiment\cooking\mom-son.png"
-OUT = "C:/experiment/cooking/app/assets/images/characters/"
-PREVIEW = "C:/Users/piyus/AppData/Local/Temp/claude/C--experiment-cooking/e790f1b6-b2b0-4481-b4ec-d0dddb78e02d/scratchpad/icons/"
+import os
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+SRC = os.path.join(HERE, "..", "..", "mom-son.png")  # owner-provided character sheet at repo root
+OUT = os.path.join(HERE, "..", "assets", "images", "characters") + os.sep
+PREVIEW = None  # set to a folder path to also save previews on the app's cream background
 
 # (name, box in original pixels: left, top, right, bottom) — generous margins, background removed below.
 CROPS = {
@@ -38,7 +41,6 @@ def remove_bg(img: Image.Image, thresh=232) -> Image.Image:
     return out.crop(out.getbbox())
 
 
-import os
 os.makedirs(OUT, exist_ok=True)
 sheet = Image.open(SRC)
 print("sheet", sheet.size)
@@ -46,8 +48,8 @@ for name, box in CROPS.items():
     cut = remove_bg(sheet.crop(box))
     cut.thumbnail((360, 360))  # plenty for a ~120pt slot at 3x
     cut.save(OUT + name + ".png", optimize=True)
-    # preview on the app's cream background to eyeball halos
-    bg = Image.new("RGBA", cut.size, (250, 238, 218, 255))
-    bg.alpha_composite(cut)
-    bg.save(PREVIEW + "preview-" + name + ".png")
+    if PREVIEW:  # on the app's cream background, to eyeball halos
+        bg = Image.new("RGBA", cut.size, (250, 238, 218, 255))
+        bg.alpha_composite(cut)
+        bg.save(os.path.join(PREVIEW, "preview-" + name + ".png"))
     print(name, cut.size, os.path.getsize(OUT + name + ".png"), "bytes")

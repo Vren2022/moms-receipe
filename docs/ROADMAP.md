@@ -47,3 +47,4 @@
 | 2026-09-26 | Name: Nuskha | Owner choice |
 | 2026-09-26 | Welcome = 5-beat auto-playing "ad": the call → the chaos → the magic → cooking together (cartoon: son cooks, Maa on live video) → the promise (+ trust line, language, "Save your first recipe") | Owner wants emotion + trust over feature lists; story-style progress bars, tap to skip; reanimated respects reduce-motion |
 | 2026-09-26 | react-native-svg for the cartoon scene | Vector, no image assets, bundled in Expo Go |
+| 2026-09-26 | Beat 4 uses the owner's Maa + son characters (mom-son.png), cut to transparent PNGs in assets/images/characters | Owner wants characters to look more real; script: app/scripts/cut-characters.py |
