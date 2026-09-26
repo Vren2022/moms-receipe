@@ -1,4 +1,4 @@
-# AGENTS.md — Mom's recipes app
+# AGENTS.md — Nuskha (mom's recipes app)
 
 Single source of truth for any coding agent (Claude Code, Codex, Cursor). Read this + `docs/ROADMAP.md` before doing anything.
 

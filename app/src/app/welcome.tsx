@@ -1,7 +1,7 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Btn, Chip } from '@/components/ui';
@@ -31,7 +31,11 @@ export default function Welcome() {
     <SafeAreaView style={s.screen}>
       <View style={s.body}>
         <View style={s.circle}>
-          <MaterialCommunityIcons name={slide.icon} size={72} color={color.softText} />
+          {i === 0 ? (
+            <Image source={require('@/assets/images/splash-icon.png')} style={{ width: 120, height: 120 }} accessibilityLabel="Mom's Recipes logo" />
+          ) : (
+            <MaterialCommunityIcons name={slide.icon} size={72} color={color.softText} />
+          )}
         </View>
         <Text style={s.title}>{slide.title}</Text>
         <Text style={s.text}>{slide.body}</Text>

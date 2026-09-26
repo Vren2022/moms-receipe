@@ -83,7 +83,13 @@ export default function Home() {
         keyboardShouldPersistTaps="handled"
         ListHeaderComponent={
           <View style={{ gap: 14, marginBottom: 4 }}>
-            <Text style={s.hello}>{"Namaste! What's cooking?"}</Text>
+            <View>
+              <Text style={s.hello}>
+                {'Maa ke haath ka swaad,\nab kabhi nahi bhoolenge '}
+                <Text style={{ color: color.accent }}>♥</Text>
+              </Text>
+              <Text style={s.tagline}>{"Nuskha · Mom's recipes, saved forever"}</Text>
+            </View>
 
             <View style={s.addRow}>
               <AddTile icon="keyboard-outline" label="Type" onPress={() => router.push('/add')} />
@@ -132,7 +138,7 @@ export default function Home() {
         }
         ListEmptyComponent={
           <Text style={s.empty}>
-            {rows.length ? 'Nothing matches. Try another word or filter.' : "No recipes yet.\nTap Type and paste what Mom told you — we'll turn it into steps."}
+            {rows.length ? 'Nothing matches. Try another word or filter.' : 'Every recipe here is a memory.\nStart with the one you miss most.'}
           </Text>
         }
         renderItem={({ item }) => (
@@ -172,7 +178,8 @@ function AddTile({ icon, label, soon, onPress }: { icon: keyof typeof MaterialCo
 }
 
 const s = StyleSheet.create({
-  hello: { fontSize: 28, fontWeight: '800', color: color.text },
+  hello: { fontSize: size.title, fontWeight: '800', color: color.text, lineHeight: 34 },
+  tagline: { fontSize: size.body, color: color.softText, marginTop: 4 },
   h2: { fontSize: 20, fontWeight: '700', color: color.text },
   addRow: { flexDirection: 'row', gap: 10 },
   tile: { flex: 1, minHeight: 92, backgroundColor: color.card, borderRadius: size.radius, borderWidth: 1, borderColor: color.border, alignItems: 'center', justifyContent: 'center', gap: 4 },

@@ -43,3 +43,4 @@
 | 2026-09-26 | Step text without amounts; countable units round to whole | "3 chammach tel" didn't scale; "6½ clove" is nonsense |
 | 2026-09-26 | @expo/vector-icons (MaterialCommunityIcons) | Cross-platform icons, bundled in Expo Go |
 | 2026-09-26 | Web output "single" + platform-split storage | expo-sqlite doesn't run on web; enables Claude Code browser preview |
+| 2026-09-26 | App name **Nuskha** (slug/scheme `nuskha`) | Owner choice: "trusted family formula" |
