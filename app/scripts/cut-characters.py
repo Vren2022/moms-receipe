@@ -120,6 +120,16 @@ for name, (box, max_size) in CROPS.items():
     cuts[name] = cut
     print(f"{name:18} {cut.size}  {os.path.getsize(OUT + name + '.png') // 1024} KB")
 
+# Owner-provided solo images that replace a sheet pose (preferred when present).
+SOLO = {"son-jumping": "son-excitement.png"}  # eyes-open excited jump, no watermark
+for name, file in SOLO.items():
+    path = os.path.join(HERE, "..", "..", file)
+    if os.path.exists(path):
+        cut = remove_bg(Image.open(path))
+        cut.save(OUT + name + ".png", optimize=True)
+        cuts[name] = cut
+        print(f"{name:18} {cut.size}  from {file}")
+
 if PREVIEW:  # contact sheet on the app's cream background, to eyeball halos and stray shadows
     cell = 240
     grid = Image.new("RGBA", (cell * 7, cell * 2), (250, 238, 218, 255))
