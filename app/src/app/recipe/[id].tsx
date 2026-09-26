@@ -1,6 +1,6 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { router, Stack, useLocalSearchParams } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { router, Stack, useFocusEffect, useLocalSearchParams } from 'expo-router';
+import { useCallback, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-native';
 
 import { RecipeBody } from '@/components/RecipeBody';
@@ -11,7 +11,7 @@ import type { Recipe } from '@/lib/recipeSchema';
 import { supabase } from '@/lib/supabase';
 import { color, size } from '@/lib/theme';
 
-type Saved = Recipe & { taught_by: string | null; is_favorite: boolean; last_cooked_at: string | null };
+type Saved = Recipe & { taught_by: string | null; is_favorite: boolean; last_cooked_at: string | null; notes: string | null };
 
 export default function RecipeScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -20,19 +20,24 @@ export default function RecipeScreen() {
   const [error, setError] = useState<string | null>(null);
   const [editing, setEditing] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const loaded = useRef(false);
 
-  useEffect(() => {
+  // Reload on focus: cook mode's Finish updates notes + last_cooked_at.
+  useFocusEffect(
+    useCallback(() => {
     supabase
       .from('recipes')
-      .select('title, category, is_veg, base_servings, language, ingredients, prep, steps, taught_by, is_favorite, last_cooked_at')
+      .select('title, category, is_veg, base_servings, language, ingredients, prep, steps, taught_by, is_favorite, last_cooked_at, notes')
       .eq('id', id)
       .single()
       .then(({ data, error }) => {
         if (error) return setError(error.message);
         setRecipe(data as Saved); // validated with zod before insert
-        setServings(data.base_servings);
+        if (!loaded.current) setServings(data.base_servings); // first load only; keep the user's servings on return
+        loaded.current = true;
       });
-  }, [id]);
+    }, [id]),
+  );
 
   async function update(patch: Partial<Saved>) {
     const before = recipe;
@@ -96,8 +101,15 @@ export default function RecipeScreen() {
           {mins && <Chip label={`${mins} min`} />}
         </View>
         <RecipeBody recipe={recipe} servings={servings} onServings={setServings} />
-        <View style={{ gap: 6, marginTop: 8 }}>
-          <Btn label={cookedToday ? 'Cooked today ✓' : 'I cooked this'} onPress={() => update({ last_cooked_at: new Date().toISOString() })} secondary={!!cookedToday} />
+        {!!recipe.notes && (
+          <View style={{ backgroundColor: color.soft, borderRadius: size.radius, padding: size.pad, gap: 4 }}>
+            <Text style={{ fontSize: 15, fontWeight: '700', color: color.softText }}>Notes for next time</Text>
+            <Text style={{ fontSize: size.body, color: color.text }}>{recipe.notes}</Text>
+          </View>
+        )}
+        <View style={{ gap: 10, marginTop: 8 }}>
+          <Btn label="Start cooking" onPress={() => router.push({ pathname: '/cook/[id]', params: { id, servings: String(servings) } })} />
+          <Btn label={cookedToday ? 'Cooked today ✓' : 'I cooked this'} onPress={() => update({ last_cooked_at: new Date().toISOString() })} secondary />
           {recipe.last_cooked_at && !cookedToday && (
             <Text style={{ textAlign: 'center', color: color.muted }}>Last cooked {timeAgo(recipe.last_cooked_at)}</Text>
           )}

@@ -19,10 +19,11 @@ AI engineer. Tells you *what* to build next; don't make them re-explain context.
 AGENTS.md / CLAUDE.md          agent context
 docs/ROADMAP.md                phases, current step, decision log
 app/                           Expo app (SDK 57) — also read app/AGENTS.md (Expo-specific rules: use `npx expo install`, fetch versioned docs)
-  src/app/                     screens (Expo Router): welcome (first launch), login (email+password, Google, code), index (home), add, recipe/[id], account
-  src/components/              RecipeBody (servings stepper, ingredients, prep, steps), ui (Btn, Chip, VegDot)
+  src/app/                     screens (Expo Router): welcome (first launch), login (email+password, Google, code), index (home), add, recipe/[id], cook/[id] (cook mode), account
+  src/components/              RecipeBody (servings stepper, ingredients, prep, steps), RecipeEditor, ui (Btn, Chip, VegDot)
   src/lib/                     supabase client, storage (SQLite localStorage on native / browser on web), prefs,
-                               recipeSchema, scale, labels (languages, teachers, categories, time helpers), theme
+                               recipeSchema, scale, labels (languages, teachers, categories, time helpers), theme,
+                               cook (step ingredients, clock), timers (local-notification alarms)
 supabase/migrations/           SQL migrations
 supabase/functions/parse-recipe/  raw input -> recipe JSON
 supabase/functions/delete-account/ deletes the calling user (cascade)
@@ -61,7 +62,7 @@ Big text (cook-step text ≥ 24pt), big tap targets (messy hands), high contrast
 ## Run / verify
 - Web preview inside Claude Code: `.claude/launch.json` → `app-web` (port 8081). Good for UI checks; test native bits (timers, audio) in Expo Go.
 - App: copy `app/.env.example` → `app/.env`, fill Supabase URL + publishable key, then `cd app && npx expo start` → scan with Expo Go.
-- Checks: `cd app && npx tsc --noEmit && npx expo lint && npx tsx src/lib/scale.check.ts`
+- Checks: `cd app && npx tsc --noEmit && npx expo lint && npx tsx src/lib/scale.check.ts && npx tsx src/lib/cook.check.ts`
 - E2E (real Supabase + AI): `cd app && node --env-file=.env scripts/e2e.check.mjs`
 - Supabase auth: email+password (name in user_metadata), Google (browser OAuth, PKCE), 6-digit email code for confirm/forgot (templates must show `{{ .Token }}`); custom SMTP for real use. Owner user list: `select * from admin.users` in the SQL editor. Migrations in `supabase/migrations/`.
 - E2E needs `SUPABASE_SECRET_KEY` in `app/.env` (test only, never `EXPO_PUBLIC_`).

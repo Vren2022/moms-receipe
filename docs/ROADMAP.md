@@ -1,6 +1,6 @@
 # Roadmap
 
-**Current:** Phase 1.6 — login (Step A built; owner dashboard setup pending)
+**Current:** Phase 2 — cook mode built; owner phone test pending (plus 1.6 dashboard setup)
 **Supabase project:** `mjbtaexynymwfjpzpdnz` (https://mjbtaexynymwfjpzpdnz.supabase.co). NOT LoopWell.
 **Next step:** owner tests on phone (Expo Go) → Phase 2 (cook mode).
 
@@ -27,6 +27,10 @@
   - [ ] Owner: review docs/PRIVACY.md (public once pushed); use its GitHub URL on the Google OAuth consent screen
   - [ ] Step B: Apple (required on iOS store build with Google), phone OTP (paid SMS + India DLT)
 - [ ] **2. Cook mode** — one step per screen, per-step timers, local notifications, keep-awake, "next time" notes
+  - [x] cook/[id]: get ready (scaled ingredients, prep checklist, last note) → one step per screen (30pt, step's ingredients with amounts, heat) → done (notes + last_cooked_at)
+  - [x] timers auto-start per step, run in parallel, +1 min / stop, local notification + sound; keep-awake; read-aloud toggle (expo-speech, remembered)
+  - [x] cook.check.ts (step ingredient matching, clock)
+  - [ ] Phone test in Expo Go: locked-screen timer alarm, read-aloud in Hindi/Gujarati, screen stays on
 - [ ] **3. Voice** — record/upload audio → Storage → Edge Function → audio-capable model (Gemini via OpenRouter) → same JSON. Note: live call recording is blocked on iOS/most Android; accept any audio file (second device, call-recorder file, or user re-telling).
 - [ ] **4. YouTube** — save link always; extract recipe when transcript/model allows
 - [ ] **5. Later** — real login + family sharing, shopping list, search
@@ -66,3 +70,6 @@
 | 2026-09-26 | Edit recipe in place (title, ingredients, prep, steps) + delete with two-tap confirm | Owner: fix AI mistakes without re-pasting |
 | 2026-09-26 | AI limit 30 calls / user / rolling 24h via `claim_ai_call()` (advisory lock, counted as the user) | Protect OpenRouter credit; atomic in one RPC |
 | 2026-09-26 | Privacy policy = docs/PRIVACY.md on the public GitHub repo, opened in-app | One source; repo is public so the URL works for Google consent + stores |
+| 2026-09-26 | Cook mode timers auto-start on reaching a step; several run at once; alarm = local notification (works in Expo Go) | Owner choice; no background audio needed |
+| 2026-09-26 | Read aloud via expo-speech, speaker toggle remembered in prefs, uses recipe.language | Owner: hands are messy, phone on the counter |
+| 2026-09-26 | Step shows amounts of ingredients its text mentions (name / first-word match) | Step text has no amounts by design; cook shouldn't scroll back |

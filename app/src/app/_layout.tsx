@@ -53,6 +53,7 @@ export default function RootLayout() {
           <Stack.Screen name="add" options={{ title: 'Add recipe' }} />
           <Stack.Screen name="recipe/[id]" options={{ title: '' }} />
           <Stack.Screen name="account" options={{ title: 'Account' }} />
+          <Stack.Screen name="cook/[id]" options={{ headerShown: false, gestureEnabled: false }} />
         </Stack.Protected>
         <Stack.Protected guard={!userId}>
           <Stack.Screen name="login" options={{ headerShown: false, animation: 'fade' }} />

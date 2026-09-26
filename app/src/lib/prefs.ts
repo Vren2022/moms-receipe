@@ -19,4 +19,6 @@ export const prefs = {
   setOnboarded: () => set('onboarded', '1'),
   language: () => get('language') ?? 'Same as input',
   setLanguage: (l: string) => set('language', l),
+  readAloud: () => get('readAloud') === '1',
+  setReadAloud: (on: boolean) => set('readAloud', on ? '1' : '0'),
 };
