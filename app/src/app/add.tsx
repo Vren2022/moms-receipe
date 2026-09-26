@@ -58,6 +58,7 @@ export default function AddRecipe() {
           <TextInput
             style={s.input}
             multiline
+            maxLength={20000}
             value={text}
             onChangeText={(t) => {
               setText(t);

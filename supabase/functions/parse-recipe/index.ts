@@ -6,6 +6,9 @@ const supabase = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPAB
 
 const MODEL = 'google/gemini-3.8-flash'; // audio-capable too, reused in Phase 3
 
+// Mirror of LANGUAGES in app/src/lib/labels.ts. Allow-listed because it goes into the system prompt.
+const LANGUAGES = ['Same as input', 'English', 'Hindi', 'Gujarati', 'Marathi', 'Tamil', 'Telugu', 'Bengali'];
+
 // Mirror of app/src/lib/recipeSchema.ts — change both together.
 const Recipe = z.object({
   title: z.string().min(1),
@@ -73,6 +76,7 @@ Deno.serve(async (req) => {
   const { text, language = 'Same as input' } = await req.json().catch(() => ({}));
   if (typeof text !== 'string' || !text.trim()) return json({ error: 'text is required' }, 400);
   if (text.length > 20000) return json({ error: 'text too long' }, 413);
+  if (!LANGUAGES.includes(language)) return json({ error: 'unknown language' }, 400);
 
   // 30 AI calls per user per 24h (counted in the DB as this user; see migration 0005).
   const asUser = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_ANON_KEY')!, {
@@ -92,12 +96,20 @@ Deno.serve(async (req) => {
       model: MODEL,
       response_format: { type: 'json_object' },
       messages: [
-        { role: 'system', content: prompt(String(language)) },
+        { role: 'system', content: prompt(language) },
         { role: 'user', content: text },
       ],
     }),
+    signal: AbortSignal.timeout(60_000), // don't leave the user on a spinner if the provider hangs
+  }).catch((e) => {
+    console.error('openrouter fetch', e);
+    return null;
   });
-  if (!res.ok) return json({ error: `AI error ${res.status}`, detail: await res.text() }, 502);
+  if (!res) return json({ error: 'AI timed out' }, 504);
+  if (!res.ok) {
+    console.error('openrouter', res.status, await res.text()); // details stay in function logs, not the client
+    return json({ error: `AI error ${res.status}` }, 502);
+  }
 
   const content: string = (await res.json()).choices?.[0]?.message?.content ?? '';
   let raw: unknown;

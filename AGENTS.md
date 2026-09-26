@@ -59,6 +59,14 @@ Big text (cook-step text ≥ 24pt), big tap targets (messy hands), high contrast
 - Non-trivial logic leaves one runnable check (e.g. `app/src/lib/scale.check.ts`).
 - Never commit `.env*`.
 
+## Verification (every feature, before "done")
+Owner rule: try to break it, don't just build it. Fix small findings now; bring big ones to the owner as a plan. Always state what was NOT verified.
+- **Bugs / edge cases:** bad or empty input, huge input, double taps, async races (e.g. state changed while awaiting), offline / failed requests (no silent data loss), screens with no way out.
+- **Crashes:** every screen renders its loading and error states; URL params are untrusted on web.
+- **Performance:** nothing grows unbounded, no timers or intervals left running, no per-render queries.
+- **Security:** RLS for every new table (simulate other users' reads **and writes** in a rolled-back SQL transaction), DB constraints on client-written data, Edge Functions check the user JWT, allow-list anything that reaches a prompt, never return provider errors or secrets to the client, `get_advisors` security + performance clean.
+- **Run:** typecheck, lint, `*.check.ts`, e2e, and the web preview.
+
 ## Run / verify
 - Web preview inside Claude Code: `.claude/launch.json` → `app-web` (port 8081). Good for UI checks; test native bits (timers, audio) in Expo Go.
 - App: copy `app/.env.example` → `app/.env`, fill Supabase URL + publishable key, then `cd app && npx expo start` → scan with Expo Go.

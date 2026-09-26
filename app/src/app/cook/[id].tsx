@@ -29,7 +29,16 @@ export default function Cook() {
   const [now, setNow] = useState(() => Date.now());
   const [readAloud, setReadAloud] = useState(prefs.readAloud());
   const [notes, setNotes] = useState('');
+  const [saveError, setSaveError] = useState<string | null>(null);
   const started = useRef(new Set<number>()); // steps whose timer already auto-started (don't restart on Back)
+  // Source of truth for scheduled alarms (state updates are async): step -> { endAt, notifId }.
+  const alarms = useRef(new Map<number, Timer>());
+
+  // Leaving cook mode cancels every alarm; no ghost alarms that can't be stopped.
+  useEffect(() => {
+    const map = alarms.current;
+    return () => map.forEach((t) => cancel(t.notifId));
+  }, []);
 
   useEffect(() => {
     supabase
@@ -46,29 +55,33 @@ export default function Cook() {
 
   const n = recipe?.steps.length ?? 0;
   const stepIdx = page >= 1 && page <= n ? page - 1 : null;
-  const servings = Number(servingsParam) || recipe?.base_servings || 2;
+  const asked = Math.round(Number(servingsParam));
+  const servings = asked >= 1 && asked <= 100 ? asked : recipe?.base_servings || 2; // URL param is user-editable on web
   const factor = recipe ? servings / recipe.base_servings : 1;
 
   const startTimer = useCallback(
     async (idx: number, sec: number) => {
       const endAt = Date.now() + sec * 1000;
+      cancel(alarms.current.get(idx)?.notifId ?? null);
+      alarms.current.set(idx, { endAt, notifId: null });
       setTimers((t) => ({ ...t, [idx]: { endAt, notifId: null } }));
       const notifId = await schedule(`Step ${idx + 1} is done ⏰`, recipe?.steps[idx].text ?? '', sec);
-      setTimers((t) => (t[idx]?.endAt === endAt ? { ...t, [idx]: { endAt, notifId } } : t));
+      // Stopped, +1 min'd or unmounted while scheduling -> this alarm is stale.
+      if (alarms.current.get(idx)?.endAt !== endAt) return cancel(notifId);
+      alarms.current.set(idx, { endAt, notifId });
     },
     [recipe],
   );
 
   function stopTimer(idx: number) {
-    cancel(timers[idx]?.notifId ?? null);
+    cancel(alarms.current.get(idx)?.notifId ?? null);
+    alarms.current.delete(idx);
     setTimers(({ [idx]: _, ...rest }) => rest);
   }
 
   function addMinute(idx: number) {
-    const t = timers[idx];
-    if (!t) return;
-    cancel(t.notifId);
-    startTimer(idx, remaining(t.endAt, Date.now()) + 60);
+    const t = alarms.current.get(idx);
+    if (t) startTimer(idx, remaining(t.endAt, Date.now()) + 60);
   }
 
   // Auto-start the step's timer the first time you reach it.
@@ -81,8 +94,8 @@ export default function Cook() {
     }
   }, [stepIdx, recipe, startTimer]);
 
-  // Tick once a second while any timer is running.
-  const running = Object.keys(timers).length > 0;
+  // Tick once a second while any timer is still counting down (stops once all have rung).
+  const running = Object.values(timers).some((t) => t.endAt > now);
   useEffect(() => {
     if (!running) return;
     const t = setInterval(() => setNow(Date.now()), 1000);
@@ -104,13 +117,20 @@ export default function Cook() {
   }
 
   async function finish() {
-    Object.values(timers).forEach((t) => cancel(t.notifId));
-    await supabase.from('recipes').update({ notes: notes.trim() || null, last_cooked_at: new Date().toISOString() }).eq('id', id);
+    setSaveError(null);
+    const { error } = await supabase.from('recipes').update({ notes: notes.trim() || null, last_cooked_at: new Date().toISOString() }).eq('id', id);
+    if (error) return setSaveError('Could not save your note. Check your internet and tap Finish again.'); // don't lose the note
     router.back();
   }
 
-  if (error) return <Text style={{ color: color.danger, padding: size.pad }}>{error}</Text>;
-  if (!recipe) return <ActivityIndicator size="large" color={color.accent} style={{ marginTop: 80 }} />;
+  // No header in cook mode, so loading/error states need their own way out.
+  if (error || !recipe)
+    return (
+      <SafeAreaView style={[s.screen, { padding: size.pad, gap: 16 }]}>
+        {error ? <Text style={{ color: color.danger, fontSize: 18 }}>{error}</Text> : <ActivityIndicator size="large" color={color.accent} style={{ marginTop: 80 }} />}
+        <Btn label="Go back" onPress={() => router.back()} secondary />
+      </SafeAreaView>
+    );
 
   const amount = (i: Ingredient) => {
     const q = formatQty(scaleQty(i.qty, i.scale, factor, i.unit));
@@ -221,7 +241,9 @@ export default function Cook() {
               placeholder="e.g. Add a little less chilli"
               placeholderTextColor={color.muted}
               textAlignVertical="top"
+              maxLength={5000}
             />
+            {saveError && <Text style={{ color: color.danger, fontSize: 16 }}>{saveError}</Text>}
           </>
         )}
       </ScrollView>

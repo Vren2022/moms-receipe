@@ -40,7 +40,7 @@ export function RecipeEditor({ recipe, onSave, onCancel }: Props) {
   return (
     <View style={{ gap: 20 }}>
       <Field label="Recipe name">
-        <TextInput style={s.input} value={title} onChangeText={setTitle} />
+        <TextInput style={s.input} value={title} onChangeText={setTitle} maxLength={200} />
       </Field>
 
       <Field label="Ingredients (amount for the original servings)">

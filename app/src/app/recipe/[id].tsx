@@ -56,7 +56,7 @@ export default function RecipeScreen() {
     router.back();
   }
 
-  if (error) return <Text style={{ color: color.danger, padding: size.pad }}>{error}</Text>;
+  if (error && !recipe) return <Text style={{ color: color.danger, padding: size.pad }}>{error}</Text>;
   if (!recipe) return <ActivityIndicator size="large" color={color.accent} style={{ marginTop: 40 }} />;
 
   const mins = totalMinutes(recipe.steps);
@@ -64,6 +64,12 @@ export default function RecipeScreen() {
 
   return (
     <ScrollView contentContainerStyle={{ padding: size.pad, gap: 16 }}>
+      {/* A failed update (e.g. offline) is a banner, not a blank screen. */}
+      {error && (
+        <Pressable onPress={() => setError(null)} accessibilityRole="button">
+          <Text style={{ color: color.danger, fontSize: 16 }}>{error} (tap to dismiss)</Text>
+        </Pressable>
+      )}
       <Stack.Screen
         options={{
           title: editing ? 'Edit recipe' : '',
