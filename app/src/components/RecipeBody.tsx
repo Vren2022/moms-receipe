@@ -22,7 +22,7 @@ export function RecipeBody({ recipe, servings, onServings }: Props) {
 
       <Section title="Ingredients">
         {recipe.ingredients.map((i, n) => {
-          const q = formatQty(scaleQty(i.qty, i.scale, factor));
+          const q = formatQty(scaleQty(i.qty, i.scale, factor, i.unit));
           return (
             <Text key={n} style={s.row}>
               <Text style={s.qty}>{q ? `${q} ${i.unit} ` : ''}</Text>

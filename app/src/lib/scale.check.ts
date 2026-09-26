@@ -19,4 +19,7 @@ assert.equal(formatQty(0.25), '¼');
 assert.equal(formatQty(3), '3');
 assert.equal(scaleQty(0.33, 'linear', 1), 0.33);
 assert.equal(formatQty(0.33), '0.33');
+assert.equal(scaleQty(4, 'partial', 2, 'clove'), 6); // 6.498 -> 6, not 6½
+assert.equal(scaleQty(1, 'partial', 2, 'pinch'), 2); // not 1½
+assert.equal(scaleQty(1, 'linear', 0.5, 'pc'), 1); // never 0 onions
 console.log('scale ok');

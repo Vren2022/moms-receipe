@@ -19,9 +19,10 @@ AI engineer. Tells you *what* to build next; don't make them re-explain context.
 AGENTS.md / CLAUDE.md          agent context
 docs/ROADMAP.md                phases, current step, decision log
 app/                           Expo app (SDK 57) — also read app/AGENTS.md (Expo-specific rules: use `npx expo install`, fetch versioned docs)
-  src/app/                     screens (Expo Router): index (list), add, recipe/[id]
-  src/components/RecipeBody    shared recipe view (servings stepper, ingredients, prep, steps)
-  src/lib/                     supabase client, recipeSchema, scale, theme
+  src/app/                     screens (Expo Router): welcome (first launch), index (home), add, recipe/[id]
+  src/components/              RecipeBody (servings stepper, ingredients, prep, steps), ui (Btn, Chip, VegDot)
+  src/lib/                     supabase client, storage (SQLite localStorage on native / browser on web), prefs,
+                               recipeSchema, scale, labels (languages, teachers, categories, time helpers), theme
 supabase/migrations/           SQL migrations
 supabase/functions/parse-recipe/  raw input -> recipe JSON
 ```
@@ -30,6 +31,8 @@ supabase/functions/parse-recipe/  raw input -> recipe JSON
 ```json
 {
   "title": "Aloo Gobi",
+  "category": "sabzi",
+  "is_veg": true,
   "base_servings": 2,
   "language": "hi",
   "ingredients": [{"name":"onion","qty":1,"unit":"pc","scale":"linear"}],
@@ -38,6 +41,10 @@ supabase/functions/parse-recipe/  raw input -> recipe JSON
 }
 ```
 - `scale`: `linear` (×factor) | `partial` (×factor^0.7 — spices, oil) | `to_taste` (salt etc.: show base + "adjust")
+- `category`: sabzi | dal | rice | roti | snack | sweet | drink | other. `is_veg`: false if meat/fish/egg.
+- Step/prep text never contains amounts — amounts live only in `ingredients` so scaling stays correct.
+- Countable units (pc, clove, pinch) scale to whole numbers.
+- Saved-only columns (not from AI): `taught_by`, `is_favorite`, `last_cooked_at`, `source`, `raw_input`, `notes`.
 - `qty` may be null ("a pinch"); `duration_sec` and `heat` optional.
 - Source of truth: `app/src/lib/recipeSchema.ts` (Edge Function keeps a mirrored copy — change both together).
 
@@ -51,6 +58,7 @@ Big text (cook-step text ≥ 24pt), big tap targets (messy hands), high contrast
 - Never commit `.env*`.
 
 ## Run / verify
+- Web preview inside Claude Code: `.claude/launch.json` → `app-web` (port 8081). Good for UI checks; test native bits (timers, audio) in Expo Go.
 - App: copy `app/.env.example` → `app/.env`, fill Supabase URL + publishable key, then `cd app && npx expo start` → scan with Expo Go.
 - Checks: `cd app && npx tsc --noEmit && npx expo lint && npx tsx src/lib/scale.check.ts`
 - E2E (real Supabase + AI): `cd app && node --env-file=.env scripts/e2e.check.mjs`

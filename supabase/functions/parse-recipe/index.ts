@@ -9,6 +9,8 @@ const MODEL = 'google/gemini-3.8-flash'; // audio-capable too, reused in Phase 3
 // Mirror of app/src/lib/recipeSchema.ts — change both together.
 const Recipe = z.object({
   title: z.string().min(1),
+  category: z.enum(['sabzi', 'dal', 'rice', 'roti', 'snack', 'sweet', 'drink', 'other']).catch('other'),
+  is_veg: z.boolean().nullish(),
   base_servings: z.number().int().positive(),
   language: z.string(),
   ingredients: z
@@ -36,18 +38,20 @@ const Recipe = z.object({
 const prompt = (language: string) => `You turn home-cooking instructions (often spoken by a mother, informal, any Indian language or mixed like Hinglish) into a structured recipe.
 
 Return ONLY a JSON object:
-{"title": string, "base_servings": int, "language": string,
+{"title": string, "category": "sabzi"|"dal"|"rice"|"roti"|"snack"|"sweet"|"drink"|"other", "is_veg": boolean, "base_servings": int, "language": string,
  "ingredients": [{"name": string, "qty": number|null, "unit": string, "scale": "linear"|"partial"|"to_taste"}],
  "prep": [{"text": string}],
  "steps": [{"text": string, "duration_sec": int|null, "heat": "low"|"medium"|"high"|null}]}
 
 Rules:
 - Keep the cook's ORDER exactly. Split into one action per step.
+- Step and prep text name ingredients WITHOUT amounts ("Heat the oil", not "Heat 3 tbsp oil") — amounts live only in "ingredients" so they can be scaled.
 - "prep": everything to do before the stove goes on (chop, soak, grind, marinate). Soaking/marinating times go in the text.
 - base_servings: the number of people mentioned; if none, 2.
 - qty is a number (½ -> 0.5). Vague amounts ("thoda", "a pinch", "as needed") -> your best realistic estimate for base_servings; use null only if truly unknowable. Units: tsp, tbsp, cup, g, kg, ml, l, pc, pinch, clove, inch.
 - scale: vegetables/dal/rice/flour/water/paneer -> "linear"; oil, ghee, whole & powdered spices, ginger-garlic, chillies -> "partial"; salt, sugar-to-taste, garnish -> "to_taste".
 - duration_sec: from explicit times, or a realistic estimate for cues like "until golden" (onions golden ~ 300). null if instant.
+- category: the dish type (curries with meat/egg go under the closest type, e.g. "sabzi"). is_veg: false if it contains meat, fish or egg.
 - Do not invent ingredients that were not mentioned, except salt/water when clearly implied.
 - Output language for all text (title, names, steps): ${language === 'Same as input' ? 'the same language and script as the input' : language}. Put it in "language" as an ISO code.`;
 

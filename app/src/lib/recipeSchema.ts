@@ -8,8 +8,12 @@ export const IngredientSchema = z.object({
   scale: z.enum(['linear', 'partial', 'to_taste']),
 });
 
+export const CATEGORIES = ['sabzi', 'dal', 'rice', 'roti', 'snack', 'sweet', 'drink', 'other'] as const;
+
 export const RecipeSchema = z.object({
   title: z.string().min(1),
+  category: z.enum(CATEGORIES).catch('other'),
+  is_veg: z.boolean().nullish(),
   base_servings: z.number().int().positive(),
   language: z.string(),
   ingredients: z.array(IngredientSchema).min(1),

@@ -36,9 +36,11 @@ export default function RootLayout() {
           headerStyle: { backgroundColor: color.bg },
           headerTintColor: color.text,
           headerTitleStyle: { fontSize: 20, fontWeight: '700' },
+          headerShadowVisible: false,
           contentStyle: { backgroundColor: color.bg },
         }}>
-        <Stack.Screen name="index" options={{ title: 'My recipes' }} />
+        <Stack.Screen name="index" options={{ headerShown: false, title: 'My recipes' }} />
+        <Stack.Screen name="welcome" options={{ headerShown: false, animation: 'fade' }} />
         <Stack.Screen name="add" options={{ title: 'Add recipe' }} />
         <Stack.Screen name="recipe/[id]" options={{ title: '' }} />
       </Stack>
