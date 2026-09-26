@@ -42,6 +42,24 @@
         "8083"
       ],
       "port": 8083
+    },
+    {
+      "name": "app-web-local",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "--prefix",
+        "app",
+        "run",
+        "web",
+        "--",
+        "--port",
+        "8084"
+      ],
+      "port": 8084,
+      "env": {
+        "EXPO_PUBLIC_SUPABASE_URL": "http://127.0.0.1:54321",
+        "EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY": "sb_publishable_ACJWlzQHlZjBrEguHvfOxg_3BJgxAaH"
+      }
     }
   ]
 }

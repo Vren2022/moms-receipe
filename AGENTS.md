@@ -65,13 +65,14 @@ Owner rule: try to break it, don't just build it. Fix small findings now; bring 
 - **Crashes:** every screen renders its loading and error states; URL params are untrusted on web.
 - **Performance:** nothing grows unbounded, no timers or intervals left running, no per-render queries.
 - **Security:** RLS for every new table (simulate other users' reads **and writes** in a rolled-back SQL transaction), DB constraints on client-written data, Edge Functions check the user JWT, allow-list anything that reaches a prompt, never return provider errors or secrets to the client, `get_advisors` security + performance clean.
-- **Run:** typecheck, lint, `*.check.ts`, e2e, and the web preview.
+- **Run:** typecheck, lint, `*.check.ts`, e2e, and click through the changed screens on the local stack (`app-web-local`).
 
 ## Run / verify
 - Web preview inside Claude Code: `.claude/launch.json` → `app-web` (port 8081). Good for UI checks; test native bits (timers, audio) in Expo Go.
 - App: copy `app/.env.example` → `app/.env`, fill Supabase URL + publishable key, then `cd app && npx expo start` → scan with Expo Go.
 - Checks: `cd app && npx tsc --noEmit && npx expo lint && npx tsx src/lib/scale.check.ts && npx tsx src/lib/cook.check.ts`
-- E2E (real Supabase + AI): `cd app && node --env-file=.env scripts/e2e.check.mjs`
+- E2E (real Supabase + AI): `cd app && node --env-file=.env scripts/e2e.check.mjs` (needs `SUPABASE_SECRET_KEY` in app/.env)
+- Full UI testing behind login: local Supabase in Docker (`npx supabase start`), preview `app-web-local` (port 8084), codes in Mailpit :54324. See `supabase/LOCAL_TESTING.md`.
 - Supabase auth: email+password (name in user_metadata), Google (browser OAuth, PKCE), 6-digit email code for confirm/forgot (templates must show `{{ .Token }}`); custom SMTP for real use. Owner user list: `select * from admin.users` in the SQL editor. Migrations in `supabase/migrations/`.
 - E2E needs `SUPABASE_SECRET_KEY` in `app/.env` (test only, never `EXPO_PUBLIC_`).
 - AI model: one constant `MODEL` in `supabase/functions/parse-recipe/index.ts`.

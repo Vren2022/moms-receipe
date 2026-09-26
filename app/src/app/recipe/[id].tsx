@@ -53,7 +53,8 @@ export default function RecipeScreen() {
     if (!confirmDelete) return setConfirmDelete(true);
     const { error } = await supabase.from('recipes').delete().eq('id', id);
     if (error) return setError(error.message);
-    router.back();
+    if (router.canGoBack()) router.back();
+    else router.replace('/'); // opened from a link: no screen to go back to
   }
 
   if (error && !recipe) return <Text style={{ color: color.danger, padding: size.pad }}>{error}</Text>;

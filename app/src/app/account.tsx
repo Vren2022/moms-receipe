@@ -16,6 +16,7 @@ export default function Account() {
   const [confirming, setConfirming] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [pwError, setPwError] = useState<string | null>(null); // shown by the password field, not next to Delete
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
@@ -27,14 +28,14 @@ export default function Account() {
 
   // For "forgot password" (logged in with a code) and Google users who want a password too.
   async function onSavePassword() {
-    if (newPassword.length < 8) return setError('Password needs at least 8 characters');
-    setError(null);
+    if (newPassword.length < 8) return setPwError('Password needs at least 8 characters');
+    setPwError(null);
     try {
       await setPassword(newPassword);
       setNewPassword('');
       setSaved(true);
     } catch (e: any) {
-      setError(e?.message ?? String(e));
+      setPwError(e?.message ?? String(e));
     }
   }
 
@@ -62,6 +63,7 @@ export default function Account() {
         onChangeText={(t) => {
           setNewPassword(t);
           setSaved(false);
+          setPwError(null);
         }}
         placeholder="8+ characters"
         placeholderTextColor={color.muted}
@@ -71,6 +73,7 @@ export default function Account() {
         textContentType="newPassword"
       />
       {saved ? <Text style={s.label}>Password saved ✓</Text> : newPassword.length > 0 && <Btn label="Save password" onPress={onSavePassword} secondary />}
+      {pwError && <Text style={s.warn}>{pwError}</Text>}
 
       <View style={{ flex: 1 }} />
 

@@ -22,7 +22,8 @@
   - [x] Email + password (name on sign-up), Google button (browser OAuth), code = confirm email / forgot password, set password in Account; session persists until logout
   - [x] Step A code: email 6-digit code login, `profiles` (trigger), `admin.users` view (SQL editor only), account screen, `delete-account` fn deployed
   - [ ] Owner: Google provider (Google Cloud OAuth client → Supabase Auth → Providers → Google); redirect allow-list: `nuskha://**`, `exp://**`, `http://localhost:8081`
-  - [ ] Owner: custom SMTP (Resend), email template shows `{{ .Token }}`, `SUPABASE_SECRET_KEY` in app/.env → run e2e, then turn **off** anonymous sign-ins
+  - [x] `SUPABASE_SECRET_KEY` in app/.env; e2e passes on production (2026-09-26)
+  - [ ] Owner: custom SMTP (Resend); paste `supabase/templates/*.html` into dashboard email templates; Auth min password length 8; turn **off** anonymous sign-ins
   - [x] Gaps: delete recipe, edit recipe (RecipeEditor, zod-validated), 30 AI calls/user/24h (`claim_ai_call`, parse-recipe v5), privacy policy (docs/PRIVACY.md, linked from login + account)
   - [ ] Owner: review docs/PRIVACY.md (public once pushed); use its GitHub URL on the Google OAuth consent screen
   - [ ] Step B: Apple (required on iOS store build with Google), phone OTP (paid SMS + India DLT)
@@ -76,3 +77,5 @@
 | 2026-09-26 | Verification pass required for every feature (AGENTS.md checklist) | Owner rule: no bugs, crash paths, slowdowns or security holes |
 | 2026-09-26 | Hardening: recipe JSON shape/size + text caps as DB constraints; ai_calls pruned per call; parse-recipe allow-lists language, 60s AI timeout, no provider error bodies to client; cook mode cancels alarms on exit/races, exit on error, clamps servings param, saves note safely | Findings from the first verification pass |
 | 2026-09-26 | Sign-up and forgot-password answer the same for known and unknown emails; new passwords 8+ chars (login still accepts old 6-7) | Owner: no account enumeration, stronger passwords |
+| 2026-09-26 | Local Supabase in Docker for full UI tests (preview `app-web-local`, Mailpit for codes); production e2e with secret key | Owner chose both; login wall blocked verifying screens |
+| 2026-09-26 | Leaving a screen with no history goes home (`canGoBack` else replace '/'); keep-awake suppresses deactivate warnings | Found by local UI test: delete/exit from a link did nothing; web threw on exit |

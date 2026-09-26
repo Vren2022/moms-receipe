@@ -18,8 +18,12 @@ import { cancel, schedule } from '@/lib/timers';
 
 type Timer = { endAt: number; notifId: string | null };
 
+// Opened from a link/notification there's no screen to go back to -> go home instead of doing nothing.
+const leave = () => (router.canGoBack() ? router.back() : router.replace('/'));
+
 export default function Cook() {
-  useKeepAwake();
+  // suppressDeactivateWarnings: leaving fast (web) or a dead Activity (Android) otherwise throws an unhandled rejection.
+  useKeepAwake(undefined, { suppressDeactivateWarnings: true });
   const { id, servings: servingsParam } = useLocalSearchParams<{ id: string; servings?: string }>();
   const [recipe, setRecipe] = useState<(Recipe & { notes: string | null }) | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -120,7 +124,7 @@ export default function Cook() {
     setSaveError(null);
     const { error } = await supabase.from('recipes').update({ notes: notes.trim() || null, last_cooked_at: new Date().toISOString() }).eq('id', id);
     if (error) return setSaveError('Could not save your note. Check your internet and tap Finish again.'); // don't lose the note
-    router.back();
+    leave();
   }
 
   // No header in cook mode, so loading/error states need their own way out.
@@ -128,13 +132,14 @@ export default function Cook() {
     return (
       <SafeAreaView style={[s.screen, { padding: size.pad, gap: 16 }]}>
         {error ? <Text style={{ color: color.danger, fontSize: 18 }}>{error}</Text> : <ActivityIndicator size="large" color={color.accent} style={{ marginTop: 80 }} />}
-        <Btn label="Go back" onPress={() => router.back()} secondary />
+        <Btn label="Go back" onPress={leave} secondary />
       </SafeAreaView>
     );
 
   const amount = (i: Ingredient) => {
     const q = formatQty(scaleQty(i.qty, i.scale, factor, i.unit));
-    return q ? `${q} ${i.unit}`.trim() : i.scale === 'to_taste' ? 'to taste' : '';
+    if (!q) return i.scale === 'to_taste' ? 'to taste' : '';
+    return `${q} ${i.unit}`.trim() + (i.scale === 'to_taste' && factor !== 1 ? ' (to taste)' : '');
   };
   const step = stepIdx != null ? recipe.steps[stepIdx] : null;
   const otherTimers = Object.entries(timers).filter(([k]) => Number(k) !== stepIdx);
@@ -143,7 +148,7 @@ export default function Cook() {
     <SafeAreaView style={s.screen}>
       {/* Top bar: exit, progress, read aloud */}
       <View style={s.top}>
-        <Pressable onPress={() => router.back()} hitSlop={12} accessibilityLabel="Exit cook mode" style={s.iconBtn}>
+        <Pressable onPress={leave} hitSlop={12} accessibilityLabel="Exit cook mode" style={s.iconBtn}>
           <MaterialCommunityIcons name="close" size={30} color={color.text} />
         </Pressable>
         <Text style={s.progressText}>{page === 0 ? 'Get ready' : page > n ? 'Done!' : `Step ${page} of ${n}`}</Text>
