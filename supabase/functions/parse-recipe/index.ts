@@ -65,8 +65,7 @@ const json = (body: unknown, status = 200) =>
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: cors });
 
-  // verify_jwt also accepts the public anon key; require a real signed-in (incl. anonymous) user so the key can't burn AI credit.
-  // ponytail: no per-user rate limit yet; add one if anon sign-ups get abused
+  // verify_jwt also accepts the public anon key; require a real signed-in user so the key can't burn AI credit.
   const token = req.headers.get('Authorization')?.replace('Bearer ', '') ?? '';
   const { data: auth } = await supabase.auth.getUser(token);
   if (!auth.user) return json({ error: 'sign in required' }, 401);
@@ -74,6 +73,14 @@ Deno.serve(async (req) => {
   const { text, language = 'Same as input' } = await req.json().catch(() => ({}));
   if (typeof text !== 'string' || !text.trim()) return json({ error: 'text is required' }, 400);
   if (text.length > 20000) return json({ error: 'text too long' }, 413);
+
+  // 30 AI calls per user per 24h (counted in the DB as this user; see migration 0005).
+  const asUser = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_ANON_KEY')!, {
+    global: { headers: { Authorization: `Bearer ${token}` } },
+  });
+  const { data: allowed, error: limitErr } = await asUser.rpc('claim_ai_call');
+  if (limitErr) return json({ error: `limit check failed: ${limitErr.message}` }, 500);
+  if (!allowed) return json({ error: 'daily limit reached' }, 429);
 
   const key = Deno.env.get('OPENROUTER_API_KEY');
   if (!key) return json({ error: 'OPENROUTER_API_KEY secret is not set on the Supabase project' }, 500);

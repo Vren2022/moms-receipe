@@ -1,6 +1,6 @@
 # Roadmap
 
-**Current:** Phase 1 — text → recipe (in progress)
+**Current:** Phase 1.6 — login (Step A built; owner dashboard setup pending)
 **Supabase project:** `mjbtaexynymwfjpzpdnz` (https://mjbtaexynymwfjpzpdnz.supabase.co). NOT LoopWell.
 **Next step:** owner tests on phone (Expo Go) → Phase 2 (cook mode).
 
@@ -18,6 +18,14 @@
   - [x] e2e check passes (Hinglish + Gujarati, RLS isolation) — 2026-09-26
   - [ ] Tested on phone with Hinglish + Gujarati samples
 - [x] **1.5 UI: welcome + organize** (2026-09-26) — first-launch intro (3 slides + preferred language), home with Type/Voice-soon/Video-soon tiles, search (name + ingredient), filters (favorites, who taught it, dish type), recently cooked, veg dot, total time; "who taught you" on save; favorite heart; "I cooked this"
+- [ ] **1.6 Login** — required after welcome; profiles + owner view `admin.users`; logout; delete account
+  - [x] Email + password (name on sign-up), Google button (browser OAuth), code = confirm email / forgot password, set password in Account; session persists until logout
+  - [x] Step A code: email 6-digit code login, `profiles` (trigger), `admin.users` view (SQL editor only), account screen, `delete-account` fn deployed
+  - [ ] Owner: Google provider (Google Cloud OAuth client → Supabase Auth → Providers → Google); redirect allow-list: `nuskha://**`, `exp://**`, `http://localhost:8081`
+  - [ ] Owner: custom SMTP (Resend), email template shows `{{ .Token }}`, `SUPABASE_SECRET_KEY` in app/.env → run e2e, then turn **off** anonymous sign-ins
+  - [x] Gaps: delete recipe, edit recipe (RecipeEditor, zod-validated), 30 AI calls/user/24h (`claim_ai_call`, parse-recipe v5), privacy policy (docs/PRIVACY.md, linked from login + account)
+  - [ ] Owner: review docs/PRIVACY.md (public once pushed); use its GitHub URL on the Google OAuth consent screen
+  - [ ] Step B: Apple (required on iOS store build with Google), phone OTP (paid SMS + India DLT)
 - [ ] **2. Cook mode** — one step per screen, per-step timers, local notifications, keep-awake, "next time" notes
 - [ ] **3. Voice** — record/upload audio → Storage → Edge Function → audio-capable model (Gemini via OpenRouter) → same JSON. Note: live call recording is blocked on iOS/most Android; accept any audio file (second device, call-recorder file, or user re-telling).
 - [ ] **4. YouTube** — save link always; extract recipe when transcript/model allows
@@ -50,3 +58,11 @@
 | 2026-09-26 | Beat 4 uses the owner's Maa + son characters (mom-son.png), cut to transparent PNGs in assets/images/characters | Owner wants characters to look more real; script: app/scripts/cut-characters.py |
 | 2026-09-26 | Beat 4 = 12-frame flipbook "Aaj main banaunga!" using all 14 poses (StoryFlipbook.tsx); beat advances when the story ends (onDone), not on a fixed timer | Owner: "use all the characters, frame by frame"; fixed timer cut off the finale |
 | 2026-09-26 | Logo = owner's heart + Maa/son (app-logo.png) on cream #FFF8F0; icons built by app/scripts/logo-icons.py (replaces render-icons.mjs) | Owner choice; script crops to the glyph so the Gemini watermark sparkle never ships |
+| 2026-09-26 | Login required upfront after welcome; all methods wanted (email code now; Google/Apple/phone in Step B needing a dev build) | Owner choice |
+| 2026-09-26 | Collect nothing extra: auth email/phone + `profiles.language/last_seen_at`; owner "CRM" = `admin.users` view in a non-API schema | Owner: keep simple unless AI needs more; DPDP data minimisation |
+| 2026-09-26 | Email OTP code (not magic link), `delete-account` edge fn, e2e uses admin-created test users | Works in Expo Go without deep links; store rules require account deletion; anon sign-in going away |
+| 2026-09-26 | Email + password with name on sign-up, plus Google via browser OAuth (PKCE); email code kept for confirm + forgot password | Owner wants passwords + Google; browser OAuth works in Expo Go, no native module |
+| 2026-09-26 | Name stored in auth user_metadata (Google gives full_name); shown in `admin.users` | No extra table/column needed |
+| 2026-09-26 | Edit recipe in place (title, ingredients, prep, steps) + delete with two-tap confirm | Owner: fix AI mistakes without re-pasting |
+| 2026-09-26 | AI limit 30 calls / user / rolling 24h via `claim_ai_call()` (advisory lock, counted as the user) | Protect OpenRouter credit; atomic in one RPC |
+| 2026-09-26 | Privacy policy = docs/PRIVACY.md on the public GitHub repo, opened in-app | One source; repo is public so the URL works for Google consent + stores |

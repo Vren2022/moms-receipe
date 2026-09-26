@@ -10,7 +10,7 @@ AI engineer. Tells you *what* to build next; don't make them re-explain context.
 
 ## Stack
 - `app/` — Expo (React Native, Expo Router, TypeScript), npm, plain `StyleSheet` + `lib/theme.ts`
-- `supabase/` — Postgres (`recipes` table, RLS owner-only), anonymous auth, Storage (Phase 3), Edge Functions (Deno)
+- `supabase/` — Postgres (`recipes`, `profiles`, RLS owner-only), email-code auth, Storage (Phase 3), Edge Functions (Deno)
 - AI — OpenRouter, called **only** from Edge Functions. `OPENROUTER_API_KEY` is a Supabase function secret. Never put API keys in the app.
 - Validation — `zod`. AI output is untrusted input: validate before saving/showing.
 
@@ -19,12 +19,13 @@ AI engineer. Tells you *what* to build next; don't make them re-explain context.
 AGENTS.md / CLAUDE.md          agent context
 docs/ROADMAP.md                phases, current step, decision log
 app/                           Expo app (SDK 57) — also read app/AGENTS.md (Expo-specific rules: use `npx expo install`, fetch versioned docs)
-  src/app/                     screens (Expo Router): welcome (first launch), index (home), add, recipe/[id]
+  src/app/                     screens (Expo Router): welcome (first launch), login (email+password, Google, code), index (home), add, recipe/[id], account
   src/components/              RecipeBody (servings stepper, ingredients, prep, steps), ui (Btn, Chip, VegDot)
   src/lib/                     supabase client, storage (SQLite localStorage on native / browser on web), prefs,
                                recipeSchema, scale, labels (languages, teachers, categories, time helpers), theme
 supabase/migrations/           SQL migrations
 supabase/functions/parse-recipe/  raw input -> recipe JSON
+supabase/functions/delete-account/ deletes the calling user (cascade)
 ```
 
 ## Recipe JSON contract (every input source must produce this)
@@ -62,6 +63,7 @@ Big text (cook-step text ≥ 24pt), big tap targets (messy hands), high contrast
 - App: copy `app/.env.example` → `app/.env`, fill Supabase URL + publishable key, then `cd app && npx expo start` → scan with Expo Go.
 - Checks: `cd app && npx tsc --noEmit && npx expo lint && npx tsx src/lib/scale.check.ts`
 - E2E (real Supabase + AI): `cd app && node --env-file=.env scripts/e2e.check.mjs`
-- Supabase: enable **Anonymous sign-ins** (Auth → Providers). Migrations in `supabase/migrations/`.
+- Supabase auth: email+password (name in user_metadata), Google (browser OAuth, PKCE), 6-digit email code for confirm/forgot (templates must show `{{ .Token }}`); custom SMTP for real use. Owner user list: `select * from admin.users` in the SQL editor. Migrations in `supabase/migrations/`.
+- E2E needs `SUPABASE_SECRET_KEY` in `app/.env` (test only, never `EXPO_PUBLIC_`).
 - AI model: one constant `MODEL` in `supabase/functions/parse-recipe/index.ts`.
 - Edge function deploy: Supabase MCP `deploy_edge_function` or `supabase functions deploy parse-recipe`.

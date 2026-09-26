@@ -83,12 +83,17 @@ export default function Home() {
         keyboardShouldPersistTaps="handled"
         ListHeaderComponent={
           <View style={{ gap: 14, marginBottom: 4 }}>
-            <View>
-              <Text style={s.hello}>
-                {'Cook it just like Mom '}
-                <Text style={{ color: color.accent }}>♥</Text>
-              </Text>
-              <Text style={s.tagline}>{"Nuskha · Mom's recipes, saved forever"}</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
+              <View style={{ flex: 1 }}>
+                <Text style={s.hello}>
+                  {'Cook it just like Mom '}
+                  <Text style={{ color: color.accent }}>♥</Text>
+                </Text>
+                <Text style={s.tagline}>{"Nuskha · Mom's recipes, saved forever"}</Text>
+              </View>
+              <Pressable onPress={() => router.push('/account')} hitSlop={12} accessibilityRole="button" accessibilityLabel="Account">
+                <MaterialCommunityIcons name="account-circle-outline" size={34} color={color.muted} />
+              </Pressable>
             </View>
 
             <View style={s.addRow}>

@@ -27,11 +27,10 @@ export default function Welcome() {
     return () => clearTimeout(t);
   }, [beat]);
 
-  function finish(to: '/' | '/add') {
+  function finish() {
     prefs.setLanguage(language);
     prefs.setOnboarded();
-    router.replace('/');
-    if (to === '/add') router.push('/add');
+    router.replace('/login');
   }
 
   return (
@@ -60,7 +59,7 @@ export default function Welcome() {
           {beat === 1 && <TheChaos />}
           {beat === 2 && <TheMagic />}
           {beat === STORY && <Together onDone={() => setBeat(STORY + 1)} />}
-          {beat === 4 && <ThePromise language={language} setLanguage={setLanguage} onStart={() => finish('/add')} onExplore={() => finish('/')} />}
+          {beat === 4 && <ThePromise language={language} setLanguage={setLanguage} onStart={finish} />}
         </View>
       </Pressable>
     </SafeAreaView>
@@ -176,7 +175,7 @@ function Together({ onDone }: { onDone: () => void }) {
   );
 }
 
-function ThePromise({ language, setLanguage, onStart, onExplore }: { language: string; setLanguage: (l: string) => void; onStart: () => void; onExplore: () => void }) {
+function ThePromise({ language, setLanguage, onStart }: { language: string; setLanguage: (l: string) => void; onStart: () => void }) {
   return (
     <View style={[s.beat, { justifyContent: 'flex-start' }]}>
       <Animated.View entering={ZoomIn.duration(500)} style={s.logo}>
@@ -203,9 +202,6 @@ function ThePromise({ language, setLanguage, onStart, onExplore }: { language: s
       <View style={{ flex: 1 }} />
       <Animated.View entering={FadeInUp.delay(1300)} style={{ gap: 4 }}>
         <Btn label="Save your first recipe" onPress={onStart} />
-        <Pressable onPress={onExplore} style={s.explore} accessibilityRole="button">
-          <Text style={s.skip}>Look around first</Text>
-        </Pressable>
       </Animated.View>
     </View>
   );
@@ -240,5 +236,4 @@ const s = StyleSheet.create({
   trustText: { flex: 1, fontSize: 15, color: color.text },
   chooseLabel: { fontSize: 16, fontWeight: '700', color: color.text },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  explore: { minHeight: 44, alignItems: 'center', justifyContent: 'center' },
 });

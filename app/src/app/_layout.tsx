@@ -1,32 +1,41 @@
+import type { Session } from '@supabase/supabase-js';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState } from 'react';
-import { Text, View } from 'react-native';
 
-import { ensureSession } from '@/lib/supabase';
+import { prefs } from '@/lib/prefs';
+import { supabase } from '@/lib/supabase';
 import { color } from '@/lib/theme';
 
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
-  const [error, setError] = useState<string | null>(null);
-  const [ready, setReady] = useState(false);
+  const [session, setSession] = useState<Session | null | undefined>(undefined);
 
   useEffect(() => {
-    ensureSession()
-      .then(() => setReady(true))
-      .catch((e) => setError(String(e?.message ?? e)))
+    supabase.auth
+      .getSession()
+      .then(({ data }) => setSession(data.session))
       .finally(() => SplashScreen.hideAsync());
+    const { data } = supabase.auth.onAuthStateChange((_event, s) => setSession(s));
+    return () => data.subscription.unsubscribe();
   }, []);
 
-  if (error)
-    return (
-      <View style={{ flex: 1, justifyContent: 'center', padding: 24, backgroundColor: color.bg }}>
-        <Text style={{ fontSize: 18, color: color.danger }}>Could not connect: {error}</Text>
-      </View>
-    );
-  if (!ready) return null;
+  // Old anonymous sessions (pre-login builds) don't count as signed in.
+  const userId = session && !session.user.is_anonymous ? session.user.id : null;
+
+  // Backend "CRM": last seen + language chosen in the welcome story. Row itself is created by a DB trigger.
+  useEffect(() => {
+    if (!userId) return;
+    supabase
+      .from('profiles')
+      .update({ last_seen_at: new Date().toISOString(), language: prefs.language() })
+      .eq('id', userId)
+      .then(() => {});
+  }, [userId]);
+
+  if (session === undefined) return null;
 
   return (
     <>
@@ -39,10 +48,16 @@ export default function RootLayout() {
           headerShadowVisible: false,
           contentStyle: { backgroundColor: color.bg },
         }}>
-        <Stack.Screen name="index" options={{ headerShown: false, title: 'My recipes' }} />
+        <Stack.Protected guard={!!userId}>
+          <Stack.Screen name="index" options={{ headerShown: false, title: 'My recipes' }} />
+          <Stack.Screen name="add" options={{ title: 'Add recipe' }} />
+          <Stack.Screen name="recipe/[id]" options={{ title: '' }} />
+          <Stack.Screen name="account" options={{ title: 'Account' }} />
+        </Stack.Protected>
+        <Stack.Protected guard={!userId}>
+          <Stack.Screen name="login" options={{ headerShown: false, animation: 'fade' }} />
+        </Stack.Protected>
         <Stack.Screen name="welcome" options={{ headerShown: false, animation: 'fade' }} />
-        <Stack.Screen name="add" options={{ title: 'Add recipe' }} />
-        <Stack.Screen name="recipe/[id]" options={{ title: '' }} />
       </Stack>
     </>
   );

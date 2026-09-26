@@ -28,6 +28,20 @@
         "8082"
       ],
       "port": 8082
+    },
+    {
+      "name": "app-web-8083",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "--prefix",
+        "app",
+        "run",
+        "web",
+        "--",
+        "--port",
+        "8083"
+      ],
+      "port": 8083
     }
   ]
 }

@@ -29,6 +29,7 @@ export default function AddRecipe() {
     const { data, error } = await supabase.functions.invoke('parse-recipe', { body: { text, language } });
     setBusy(false);
     const parsed = RecipeSchema.safeParse(data); // never trust AI output blindly
+    if ((error as any)?.context?.status === 429) return setError("You've made 30 recipes in the last day. Please try again tomorrow.");
     if (error || !parsed.success) return setError(error ? 'Could not reach the recipe helper. Check your internet and try again.' : 'The AI reply was not a valid recipe. Try again.');
     setRecipe(parsed.data);
     setServings(parsed.data.base_servings);
