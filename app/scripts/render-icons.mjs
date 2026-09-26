@@ -2,8 +2,9 @@
 // Run: npm i --no-save @resvg/resvg-js && node scripts/render-icons.mjs  (from app/)
 import { Resvg } from '@resvg/resvg-js';
 import { writeFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 
-const OUT = new URL('../assets/images/', import.meta.url).pathname.replace(/^/([A-Z]:)/, '$1');
+const OUT = fileURLToPath(new URL('../assets/images/', import.meta.url));
 const TURMERIC = '#EF9F27', CREAM = '#FFF8F0', POT = '#412402', SAFFRON = '#C2410C';
 
 // Glyph in a 100x100 box, visually centered (heart steam above a pot).
@@ -24,6 +25,7 @@ const svg = ({ bg, rx = 0, heart = CREAM, pot = POT, scale = 1 }) => `
 
 function png(name, size, opts) {
   const r = new Resvg(svg(opts), { fitTo: { mode: 'width', value: size } });
+  writeFileSync(OUT + name, r.render().asPng());
   console.log('wrote', name, size);
 }
 
