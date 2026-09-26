@@ -85,7 +85,7 @@ export default function Home() {
           <View style={{ gap: 14, marginBottom: 4 }}>
             <View>
               <Text style={s.hello}>
-                {'Maa ke haath ka swaad,\nab kabhi nahi bhoolenge '}
+                {'Cook it just like Mom '}
                 <Text style={{ color: color.accent }}>♥</Text>
               </Text>
               <Text style={s.tagline}>{"Nuskha · Mom's recipes, saved forever"}</Text>

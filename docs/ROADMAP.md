@@ -44,3 +44,6 @@
 | 2026-09-26 | @expo/vector-icons (MaterialCommunityIcons) | Cross-platform icons, bundled in Expo Go |
 | 2026-09-26 | Web output "single" + platform-split storage | expo-sqlite doesn't run on web; enables Claude Code browser preview |
 | 2026-09-26 | App name **Nuskha** (slug/scheme `nuskha`) | Owner choice: "trusted family formula" |
+| 2026-09-26 | Name: Nuskha | Owner choice |
+| 2026-09-26 | Welcome = 5-beat auto-playing "ad": the call → the chaos → the magic → cooking together (cartoon: son cooks, Maa on live video) → the promise (+ trust line, language, "Save your first recipe") | Owner wants emotion + trust over feature lists; story-style progress bars, tap to skip; reanimated respects reduce-motion |
+| 2026-09-26 | react-native-svg for the cartoon scene | Vector, no image assets, bundled in Expo Go |
