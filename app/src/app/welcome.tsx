@@ -7,13 +7,14 @@ import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import Animated, { FadeIn, FadeInDown, FadeInUp, useAnimatedStyle, useSharedValue, withTiming, ZoomIn } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { CookingTogether } from '@/components/CookingTogether';
+import { STORY_MS, StoryFlipbook } from '@/components/StoryFlipbook';
 import { Btn, Chip } from '@/components/ui';
 import { LANGUAGES } from '@/lib/labels';
 import { prefs } from '@/lib/prefs';
 import { color, size } from '@/lib/theme';
 
-const BEAT_MS = [5000, 5000, 5500, 6000, 0]; // 0 = last beat waits for the user
+const BEAT_MS = [5000, 5000, 5500, STORY_MS, 0]; // 0 = last beat waits for the user
+const STORY = 3; // this beat advances when the flipbook says it's done, not on a timer
 const LAST = BEAT_MS.length - 1;
 
 export default function Welcome() {
@@ -21,7 +22,7 @@ export default function Welcome() {
   const [language, setLanguage] = useState(prefs.language());
 
   useEffect(() => {
-    if (beat === LAST) return;
+    if (beat === LAST || beat === STORY) return;
     const t = setTimeout(() => setBeat((b) => Math.min(b + 1, LAST)), BEAT_MS[beat]);
     return () => clearTimeout(t);
   }, [beat]);
@@ -58,7 +59,7 @@ export default function Welcome() {
           {beat === 0 && <TheCall />}
           {beat === 1 && <TheChaos />}
           {beat === 2 && <TheMagic />}
-          {beat === 3 && <Together />}
+          {beat === STORY && <Together onDone={() => setBeat(STORY + 1)} />}
           {beat === 4 && <ThePromise language={language} setLanguage={setLanguage} onStart={() => finish('/add')} onExplore={() => finish('/')} />}
         </View>
       </Pressable>
@@ -158,17 +159,17 @@ function TheMagic() {
   );
 }
 
-function Together() {
+function Together({ onDone }: { onDone: () => void }) {
   return (
     <View style={s.beat}>
       <Label>COOKING TOGETHER</Label>
       <Animated.View entering={FadeIn.duration(500)}>
-        <CookingTogether />
+        <StoryFlipbook onDone={onDone} />
       </Animated.View>
-      <Animated.Text entering={FadeInUp.delay(2200)} style={s.big}>
+      <Animated.Text entering={FadeInUp.delay(800)} style={s.big}>
         {'Like Maa is right\nthere with you'}
       </Animated.Text>
-      <Animated.Text entering={FadeIn.delay(2700)} style={s.muted}>
+      <Animated.Text entering={FadeIn.delay(1200)} style={s.muted}>
         One step at a time, with timers. At your pace.
       </Animated.Text>
     </View>
