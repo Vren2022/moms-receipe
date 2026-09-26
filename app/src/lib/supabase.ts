@@ -51,8 +51,9 @@ export async function signInWithGoogle() {
   if (Platform.OS === 'web') return; // page navigates to Google and back
   const res = await WebBrowser.openAuthSessionAsync(data.url, redirectTo);
   if (res.type !== 'success') return; // user closed the browser
-  const code = Linking.parse(res.url).queryParams?.code;
-  if (typeof code !== 'string') throw new Error('Google login failed');
+  const { code, error_description } = Linking.parse(res.url).queryParams ?? {};
+  // Supabase/Google report problems (e.g. provider not enabled, access denied) as ?error_description=...
+  if (typeof code !== 'string') throw new Error(typeof error_description === 'string' ? error_description : 'Google login failed. Please try again.');
   const { error: e2 } = await supabase.auth.exchangeCodeForSession(code);
   if (e2) throw e2;
 }

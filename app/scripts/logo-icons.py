@@ -53,3 +53,32 @@ save('android-icon-background.png', Image.new('RGBA', (512, 512), CREAM + (255,)
 save('android-icon-monochrome.png', compose(432, 0.6, mono=True))
 save('splash-icon.png', compose(512, 0.95))                      # on cream splash bg
 save('favicon.png', compose(48, 0.9, CREAM))
+
+# Google Play store listing assets (repo-root store/): 512x512 icon, 1024x500 feature graphic (no alpha allowed).
+from PIL import ImageDraw, ImageFont
+
+STORE = ROOT / 'store'
+STORE.mkdir(exist_ok=True)
+compose(512, 0.78, CREAM).convert('RGB').save(STORE / 'icon-512.png')
+print('wrote', STORE / 'icon-512.png')
+
+
+def font(size, bold=False):
+    for name in (['segoeuib.ttf', 'arialbd.ttf'] if bold else ['segoeui.ttf', 'arial.ttf']) + ['DejaVuSans.ttf']:
+        for base in ('C:/Windows/Fonts/', '/usr/share/fonts/truetype/dejavu/', ''):
+            try:
+                return ImageFont.truetype(base + name, size)
+            except OSError:
+                pass
+    return ImageFont.load_default()
+
+
+feat = Image.new('RGBA', (1024, 500), CREAM + (255,))
+g = compose(420, 0.92)
+feat.alpha_composite(g, (40, 40))
+d = ImageDraw.Draw(feat)
+d.text((500, 150), 'Nuskha', font=font(104, bold=True), fill=(194, 65, 12))       # theme accent (saffron)
+d.text((504, 285), "Mom's recipes,", font=font(46), fill=(31, 26, 23))
+d.text((504, 340), 'step by step.', font=font(46), fill=(31, 26, 23))
+feat.convert('RGB').save(STORE / 'feature-1024x500.png')
+print('wrote', STORE / 'feature-1024x500.png')

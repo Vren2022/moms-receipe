@@ -78,3 +78,5 @@ Owner rule: try to break it, don't just build it. Fix small findings now; bring 
 - E2E needs `SUPABASE_SECRET_KEY` in `app/.env` (test only, never `EXPO_PUBLIC_`).
 - AI model: one constant `MODEL` in `supabase/functions/parse-recipe/index.ts`.
 - Edge function deploy: Supabase MCP `deploy_edge_function` or `supabase functions deploy parse-recipe`.
+- Android builds (EAS, from app/): `npx eas-cli@latest build -p android --profile preview` (APK for phones) / `--profile production` (AAB for Play). Build-time env comes from **EAS env vars** (`eas env:list`), not `.env`: only `EXPO_PUBLIC_*` values go there, never secrets.
+- Play Store: listing text + Data safety answers in `docs/PLAY_LISTING.md`; reviewer account `node --env-file=.env scripts/play-reviewer.mjs`; public pages `docs/PRIVACY.md`, `docs/DELETE_ACCOUNT.md`.

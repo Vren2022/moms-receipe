@@ -15,13 +15,17 @@ We do **not** collect your location, contacts, photos, or advertising IDs. We do
 ## Who processes it
 - **Supabase** stores your account and recipes (database and login).
 - **OpenRouter / Google Gemini** receive the recipe text you submit, only to turn it into a structured recipe. Don't include personal details in recipe text that you don't want processed.
-- **Google** handles "Continue with Google" if you choose it.
+- **Google** handles "Continue with Google" if you choose it. We receive only your name and email address from Google.
+- **Gmail** delivers the sign-up and login code emails.
+
+All data is sent over encrypted connections (HTTPS).
 
 ## Who can see your recipes
 Only you. Every recipe is tied to your account and protected so other users cannot read it.
 
 ## Deleting your data
 Open **Account → Delete account** in the app. Your account, recipes and settings are deleted immediately and cannot be recovered.
+No longer have the app? See [Delete your account](DELETE_ACCOUNT.md) to request deletion by email.
 
 ## Children
 Nuskha is not directed at children under 13.
@@ -30,4 +34,4 @@ Nuskha is not directed at children under 13.
 If this policy changes, we'll update the date above.
 
 ## Contact
-Questions: open an issue at https://github.com/Vren2022/moms-receipe/issues
+Questions or requests: **virenvaviya2022@gmail.com**

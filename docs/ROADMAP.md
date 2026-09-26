@@ -1,6 +1,6 @@
 # Roadmap
 
-**Current:** Phase 2 — cook mode built; owner phone test pending (plus 1.6 dashboard setup)
+**Current:** Launch — Google Play (Android). Code/docs ready; waiting on owner accounts (Expo login, Supabase auth settings, Google Cloud OAuth, Play Console)
 **Supabase project:** `mjbtaexynymwfjpzpdnz` (https://mjbtaexynymwfjpzpdnz.supabase.co). NOT LoopWell.
 **Next step:** owner tests on phone (Expo Go) → Phase 2 (cook mode).
 
@@ -32,6 +32,16 @@
   - [x] timers auto-start per step, run in parallel, +1 min / stop, local notification + sound; keep-awake; read-aloud toggle (expo-speech, remembered)
   - [x] cook.check.ts (step ingredient matching, clock)
   - [ ] Phone test in Expo Go: locked-screen timer alarm, read-aloud in Hindi/Gujarati, screen stays on
+- [ ] **Launch: Google Play (Android)** — plan in decision log 2026-09-26
+  - [x] app.json package `app.nuskha`, blocked SYSTEM_ALERT_WINDOW + storage permissions; eas.json (preview APK, production AAB, submit internal/draft)
+  - [x] docs/DELETE_ACCOUNT.md + PRIVACY.md (contact, Google, deletion link); docs/PLAY_LISTING.md (listing text, Data safety, rating, app access); store/ icon + feature graphic
+  - [x] Play reviewer account in production (scripts/play-reviewer.mjs; creds in gitignored .env.play-review)
+  - [x] Daily Supabase keep-alive (GitHub Actions, secrets set)
+  - [ ] Owner: Expo account + `npx eas-cli@latest login` → I run `eas init`, `eas env:create`, preview build
+  - [ ] Owner: Supabase Auth — Gmail SMTP (app password), templates, min password 8, anonymous OFF, redirect URLs `nuskha://**`, `exp://**`
+  - [ ] Owner: Google Cloud OAuth (Web client, redirect `https://mjbtaexynymwfjpzpdnz.supabase.co/auth/v1/callback`) → Supabase Google provider
+  - [ ] Preview APK phone test (email + Google login, locked-screen alarm, read-aloud, keep-awake)
+  - [ ] Play Console: create app, App content from PLAY_LISTING.md, upload AAB to Internal testing, pre-launch report, promote to Production
 - [ ] **3. Voice** — record/upload audio → Storage → Edge Function → audio-capable model (Gemini via OpenRouter) → same JSON. Note: live call recording is blocked on iOS/most Android; accept any audio file (second device, call-recorder file, or user re-telling).
 - [ ] **4. YouTube** — save link always; extract recipe when transcript/model allows
 - [ ] **5. Later** — real login + family sharing, shopping list, search
@@ -84,3 +94,6 @@
 | 2026-09-26 | parse-recipe: auth + limit checks in parallel, Server-Timing header; add screen shows staged progress text | Less wait, and the wait feels alive; timing visible in scripts/latency.check.mjs |
 | 2026-09-26 | Stay in eu-west-1 (Ireland) | Owner: users mixed India + abroad; Ireland keeps worst case moderate (India ~150ms, EU ~30ms, US ~80ms); reads are local via recipeCache so region only affects saves/login/AI. Revisit if most users end up in India |
 | 2026-09-26 | timers.ts deep-imports only the local-notification modules of expo-notifications | Package root runs push-token auto-registration, which throws in Expo Go on Android (SDK 53+) and broke cook mode ("missing default export"). Verified absent from the Android bundle |
+| 2026-09-26 | Launch on Google Play first; existing personal account from before Nov 2023 (no 12-tester rule); package `app.nuskha`; Google sign-in at launch; public contact virenvaviya2022@gmail.com | Owner choices |
+| 2026-09-26 | Free Supabase + daily GitHub Actions keep-alive; Gmail SMTP for auth emails (Resend needs a domain) | Owner: $0 for now; revisit Pro / own domain with real users |
+| 2026-09-26 | EAS env vars only for EXPO_PUBLIC_*; .env never uploaded (gitignored); blocked SYSTEM_ALERT_WINDOW + external storage permissions | Secrets stay local; fewer scary permissions for Play review and users |
