@@ -7,32 +7,34 @@ import { RecipeBody } from '@/components/RecipeBody';
 import { RecipeEditor } from '@/components/RecipeEditor';
 import { Btn, Chip, VegDot } from '@/components/ui';
 import { CATEGORY_LABEL, timeAgo, totalMinutes } from '@/lib/labels';
-import type { Recipe } from '@/lib/recipeSchema';
+import { RECIPE_COLUMNS, recipeCache, type SavedRecipe } from '@/lib/recipeCache';
 import { supabase } from '@/lib/supabase';
 import { color, size } from '@/lib/theme';
 
-type Saved = Recipe & { taught_by: string | null; is_favorite: boolean; last_cooked_at: string | null; notes: string | null };
+type Saved = SavedRecipe;
 
 export default function RecipeScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const [recipe, setRecipe] = useState<Saved | null>(null);
-  const [servings, setServings] = useState(2);
+  // Opened from home/add: the cached copy renders instantly; the focus fetch below refreshes it.
+  const [recipe, setRecipe] = useState<Saved | null>(() => recipeCache.get(id) ?? null);
+  const [servings, setServings] = useState(() => recipeCache.get(id)?.base_servings ?? 2);
   const [error, setError] = useState<string | null>(null);
   const [editing, setEditing] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
-  const loaded = useRef(false);
+  const loaded = useRef(!!recipeCache.get(id));
 
   // Reload on focus: cook mode's Finish updates notes + last_cooked_at.
   useFocusEffect(
     useCallback(() => {
     supabase
       .from('recipes')
-      .select('title, category, is_veg, base_servings, language, ingredients, prep, steps, taught_by, is_favorite, last_cooked_at, notes')
+      .select(RECIPE_COLUMNS)
       .eq('id', id)
       .single()
       .then(({ data, error }) => {
-        if (error) return setError(error.message);
+        if (error) return setError(error.message); // with a cached copy this is a banner, not a blank screen
         setRecipe(data as Saved); // validated with zod before insert
+        recipeCache.set(data as Saved);
         if (!loaded.current) setServings(data.base_servings); // first load only; keep the user's servings on return
         loaded.current = true;
       });
@@ -42,10 +44,12 @@ export default function RecipeScreen() {
   async function update(patch: Partial<Saved>) {
     const before = recipe;
     setRecipe((r) => r && { ...r, ...patch });
+    recipeCache.patch(id, patch); // home shows the change without waiting
     const { error } = await supabase.from('recipes').update(patch).eq('id', id);
     if (error) {
       setError(error.message);
       setRecipe(before);
+      if (before) recipeCache.set(before);
     }
   }
 
@@ -53,6 +57,7 @@ export default function RecipeScreen() {
     if (!confirmDelete) return setConfirmDelete(true);
     const { error } = await supabase.from('recipes').delete().eq('id', id);
     if (error) return setError(error.message);
+    recipeCache.remove(id);
     if (router.canGoBack()) router.back();
     else router.replace('/'); // opened from a link: no screen to go back to
   }

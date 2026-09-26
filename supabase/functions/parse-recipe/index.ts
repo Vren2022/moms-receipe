@@ -61,33 +61,39 @@ Rules:
 const cors = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Expose-Headers': 'server-timing',
 };
-const json = (body: unknown, status = 200) =>
-  new Response(JSON.stringify(body), { status, headers: { ...cors, 'Content-Type': 'application/json' } });
+const json = (body: unknown, status = 200, extra: Record<string, string> = {}) =>
+  new Response(JSON.stringify(body), { status, headers: { ...cors, 'Content-Type': 'application/json', ...extra } });
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: cors });
 
-  // verify_jwt also accepts the public anon key; require a real signed-in user so the key can't burn AI credit.
+  // Server-Timing (auth/total) lets scripts/latency.check.mjs see where a slow parse spends its time. Per request.
+  let timing = '';
+  const t0 = performance.now();
+  const reply = (body: unknown, status = 200) => json(body, status, { 'Server-Timing': timing });
   const token = req.headers.get('Authorization')?.replace('Bearer ', '') ?? '';
-  const { data: auth } = await supabase.auth.getUser(token);
-  if (!auth.user) return json({ error: 'sign in required' }, 401);
 
+  // Cheap input checks first (no network).
   const { text, language = 'Same as input' } = await req.json().catch(() => ({}));
-  if (typeof text !== 'string' || !text.trim()) return json({ error: 'text is required' }, 400);
-  if (text.length > 20000) return json({ error: 'text too long' }, 413);
-  if (!LANGUAGES.includes(language)) return json({ error: 'unknown language' }, 400);
+  if (typeof text !== 'string' || !text.trim()) return reply({ error: 'text is required' }, 400);
+  if (text.length > 20000) return reply({ error: 'text too long' }, 413);
+  if (!LANGUAGES.includes(language)) return reply({ error: 'unknown language' }, 400);
 
-  // 30 AI calls per user per 24h (counted in the DB as this user; see migration 0005).
+  // verify_jwt also accepts the public anon key; require a real signed-in user so the key can't burn AI credit.
+  // In parallel: 30 AI calls per user per 24h (claim_ai_call counts as this user; no uid -> false, nothing recorded).
   const asUser = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_ANON_KEY')!, {
     global: { headers: { Authorization: `Bearer ${token}` } },
   });
-  const { data: allowed, error: limitErr } = await asUser.rpc('claim_ai_call');
-  if (limitErr) return json({ error: `limit check failed: ${limitErr.message}` }, 500);
-  if (!allowed) return json({ error: 'daily limit reached' }, 429);
+  const [{ data: auth }, { data: allowed, error: limitErr }] = await Promise.all([supabase.auth.getUser(token), asUser.rpc('claim_ai_call')]);
+  timing = `auth;dur=${Math.round(performance.now() - t0)}`;
+  if (!auth.user) return reply({ error: 'sign in required' }, 401);
+  if (limitErr) return reply({ error: `limit check failed: ${limitErr.message}` }, 500);
+  if (!allowed) return reply({ error: 'daily limit reached' }, 429);
 
   const key = Deno.env.get('OPENROUTER_API_KEY');
-  if (!key) return json({ error: 'OPENROUTER_API_KEY secret is not set on the Supabase project' }, 500);
+  if (!key) return reply({ error: 'OPENROUTER_API_KEY secret is not set on the Supabase project' }, 500);
 
   const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
     method: 'POST',
@@ -95,6 +101,8 @@ Deno.serve(async (req) => {
     body: JSON.stringify({
       model: MODEL,
       response_format: { type: 'json_object' },
+      // Default reasoning spent ~1.5k hidden tokens = ~15s per parse; 'low' is ~4s with the same output quality (checked 2026-09-26).
+      reasoning: { effort: 'low' },
       messages: [
         { role: 'system', content: prompt(language) },
         { role: 'user', content: text },
@@ -105,20 +113,27 @@ Deno.serve(async (req) => {
     console.error('openrouter fetch', e);
     return null;
   });
-  if (!res) return json({ error: 'AI timed out' }, 504);
+  if (!res) return reply({ error: 'AI timed out' }, 504);
   if (!res.ok) {
     console.error('openrouter', res.status, await res.text()); // details stay in function logs, not the client
-    return json({ error: `AI error ${res.status}` }, 502);
+    return reply({ error: `AI error ${res.status}` }, 502);
   }
 
-  const content: string = (await res.json()).choices?.[0]?.message?.content ?? '';
+  // Body arrives when generation ends; the 60s abort can also fire here.
+  const body = await res.json().catch((e) => {
+    console.error('openrouter body', e);
+    return null;
+  });
+  timing += `, total;dur=${Math.round(performance.now() - t0)}`;
+  if (!body) return reply({ error: 'AI timed out' }, 504);
+  const content: string = body.choices?.[0]?.message?.content ?? '';
   let raw: unknown;
   try {
     raw = JSON.parse(content.replace(/^```(json)?\s*|\s*```$/g, ''));
   } catch {
-    return json({ error: 'AI returned non-JSON' }, 422);
+    return reply({ error: 'AI returned non-JSON' }, 422);
   }
   const parsed = Recipe.safeParse(raw);
-  if (!parsed.success) return json({ error: 'AI returned invalid recipe', issues: parsed.error.issues }, 422);
-  return json(parsed.data);
+  if (!parsed.success) return reply({ error: 'AI returned invalid recipe', issues: parsed.error.issues }, 422);
+  return reply(parsed.data);
 });

@@ -10,7 +10,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Btn, Chip } from '@/components/ui';
 import { fmtClock, remaining, stepIngredients } from '@/lib/cook';
 import { prefs } from '@/lib/prefs';
-import type { Ingredient, Recipe } from '@/lib/recipeSchema';
+import { RECIPE_COLUMNS, recipeCache, type SavedRecipe } from '@/lib/recipeCache';
+import type { Ingredient } from '@/lib/recipeSchema';
 import { formatQty, scaleQty } from '@/lib/scale';
 import { supabase } from '@/lib/supabase';
 import { color, size } from '@/lib/theme';
@@ -25,14 +26,15 @@ export default function Cook() {
   // suppressDeactivateWarnings: leaving fast (web) or a dead Activity (Android) otherwise throws an unhandled rejection.
   useKeepAwake(undefined, { suppressDeactivateWarnings: true });
   const { id, servings: servingsParam } = useLocalSearchParams<{ id: string; servings?: string }>();
-  const [recipe, setRecipe] = useState<(Recipe & { notes: string | null }) | null>(null);
+  // Always opened from the recipe screen, which just refreshed the cache -> render instantly, no fetch.
+  const [recipe, setRecipe] = useState<SavedRecipe | null>(() => recipeCache.get(id) ?? null);
   const [error, setError] = useState<string | null>(null);
   const [page, setPage] = useState(0); // 0 = get ready, 1..n = steps, n+1 = done
   const [prepDone, setPrepDone] = useState<Set<number>>(new Set());
   const [timers, setTimers] = useState<Record<number, Timer>>({});
   const [now, setNow] = useState(() => Date.now());
   const [readAloud, setReadAloud] = useState(prefs.readAloud());
-  const [notes, setNotes] = useState('');
+  const [notes, setNotes] = useState(() => recipeCache.get(id)?.notes ?? '');
   const [saveError, setSaveError] = useState<string | null>(null);
   const started = useRef(new Set<number>()); // steps whose timer already auto-started (don't restart on Back)
   // Source of truth for scheduled alarms (state updates are async): step -> { endAt, notifId }.
@@ -44,15 +46,18 @@ export default function Cook() {
     return () => map.forEach((t) => cancel(t.notifId));
   }, []);
 
+  // Only when opened cold (link / notification): fetch once.
   useEffect(() => {
+    if (recipeCache.get(id)) return;
     supabase
       .from('recipes')
-      .select('title, category, is_veg, base_servings, language, ingredients, prep, steps, notes')
+      .select(RECIPE_COLUMNS)
       .eq('id', id)
       .single()
       .then(({ data, error }) => {
         if (error) return setError(error.message);
-        setRecipe(data as Recipe & { notes: string | null });
+        recipeCache.set(data as SavedRecipe);
+        setRecipe(data as SavedRecipe);
         setNotes(data.notes ?? '');
       });
   }, [id]);
@@ -122,8 +127,10 @@ export default function Cook() {
 
   async function finish() {
     setSaveError(null);
-    const { error } = await supabase.from('recipes').update({ notes: notes.trim() || null, last_cooked_at: new Date().toISOString() }).eq('id', id);
+    const patch = { notes: notes.trim() || null, last_cooked_at: new Date().toISOString() };
+    const { error } = await supabase.from('recipes').update(patch).eq('id', id);
     if (error) return setSaveError('Could not save your note. Check your internet and tap Finish again.'); // don't lose the note
+    recipeCache.patch(id, patch);
     leave();
   }
 

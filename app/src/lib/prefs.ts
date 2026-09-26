@@ -21,4 +21,18 @@ export const prefs = {
   setLanguage: (l: string) => set('language', l),
   readAloud: () => get('readAloud') === '1',
   setReadAloud: (on: boolean) => set('readAloud', on ? '1' : '0'),
+  // Last known recipe list (see recipeCache). Corrupt/missing -> null, never a crash.
+  savedRecipes<T>(): T | null {
+    try {
+      return JSON.parse(get('recipes') ?? 'null');
+    } catch {
+      return null;
+    }
+  },
+  setSavedRecipes: (rows: unknown) => set('recipes', JSON.stringify(rows)),
+  clearSavedRecipes: () => {
+    try {
+      localStorage.removeItem('recipes');
+    } catch {}
+  },
 };

@@ -23,7 +23,8 @@ app/                           Expo app (SDK 57) — also read app/AGENTS.md (Ex
   src/components/              RecipeBody (servings stepper, ingredients, prep, steps), RecipeEditor, ui (Btn, Chip, VegDot)
   src/lib/                     supabase client, storage (SQLite localStorage on native / browser on web), prefs,
                                recipeSchema, scale, labels (languages, teachers, categories, time helpers), theme,
-                               cook (step ingredients, clock), timers (local-notification alarms)
+                               cook (step ingredients, clock), timers (local-notification alarms),
+                               recipeCache (single client copy of recipes; persisted; cleared on logout)
 supabase/migrations/           SQL migrations
 supabase/functions/parse-recipe/  raw input -> recipe JSON
 supabase/functions/delete-account/ deletes the calling user (cascade)
@@ -63,7 +64,7 @@ Big text (cook-step text ≥ 24pt), big tap targets (messy hands), high contrast
 Owner rule: try to break it, don't just build it. Fix small findings now; bring big ones to the owner as a plan. Always state what was NOT verified.
 - **Bugs / edge cases:** bad or empty input, huge input, double taps, async races (e.g. state changed while awaiting), offline / failed requests (no silent data loss), screens with no way out.
 - **Crashes:** every screen renders its loading and error states; URL params are untrusted on web.
-- **Performance:** nothing grows unbounded, no timers or intervals left running, no per-render queries.
+- **Performance / latency:** nothing grows unbounded, no timers left running, no per-render queries. Screens render from `recipeCache` first and refresh in the background (no spinner for data we already have). Measure with `node --env-file=.env scripts/latency.check.mjs`; AI parse target < 6 s.
 - **Security:** RLS for every new table (simulate other users' reads **and writes** in a rolled-back SQL transaction), DB constraints on client-written data, Edge Functions check the user JWT, allow-list anything that reaches a prompt, never return provider errors or secrets to the client, `get_advisors` security + performance clean.
 - **Run:** typecheck, lint, `*.check.ts`, e2e, and click through the changed screens on the local stack (`app-web-local`).
 

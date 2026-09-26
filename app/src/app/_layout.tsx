@@ -5,6 +5,7 @@ import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState } from 'react';
 
 import { prefs } from '@/lib/prefs';
+import { recipeCache } from '@/lib/recipeCache';
 import { supabase } from '@/lib/supabase';
 import { color } from '@/lib/theme';
 
@@ -34,6 +35,11 @@ export default function RootLayout() {
       .eq('id', userId)
       .then(() => {});
   }, [userId]);
+
+  // Logged out (or deleted): drop the cached/persisted recipe list so the next person on this device never sees it.
+  useEffect(() => {
+    if (session !== undefined && !userId) recipeCache.clear();
+  }, [session, userId]);
 
   if (session === undefined) return null;
 

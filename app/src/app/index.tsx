@@ -1,72 +1,72 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Redirect, router, useFocusEffect } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
-import { FlatList, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, FlatList, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Chip, VegDot } from '@/components/ui';
 import { CATEGORY_LABEL, timeAgo, totalMinutes } from '@/lib/labels';
 import { prefs } from '@/lib/prefs';
-import type { Recipe } from '@/lib/recipeSchema';
+import { RECIPE_COLUMNS, recipeCache, type SavedRecipe } from '@/lib/recipeCache';
 import { supabase } from '@/lib/supabase';
 import { color, size } from '@/lib/theme';
 
-type Row = Pick<Recipe, 'title' | 'base_servings' | 'category' | 'is_veg' | 'steps' | 'ingredients'> & {
-  id: string;
-  taught_by: string | null;
-  is_favorite: boolean;
-  last_cooked_at: string | null;
-};
-
-const COLUMNS = 'id, title, base_servings, category, is_veg, steps, ingredients, taught_by, is_favorite, last_cooked_at';
+type Row = SavedRecipe;
 
 export default function Home() {
-  const [rows, setRows] = useState<Row[]>([]);
+  // Last known list shows instantly (cold start / coming back); null = first ever load -> spinner, not "no recipes".
+  const [rows, setRows] = useState<Row[] | null>(() => recipeCache.list());
   const [error, setError] = useState<string | null>(null);
   const [query, setQuery] = useState('');
   const [filter, setFilter] = useState('All');
 
   useFocusEffect(
     useCallback(() => {
+      setRows(recipeCache.list()); // edits/deletes/new recipe from other screens show immediately
       supabase
         .from('recipes')
-        .select(COLUMNS)
+        .select(RECIPE_COLUMNS)
         .order('created_at', { ascending: false })
         .then(({ data, error }) => {
           setError(error?.message ?? null);
-          setRows((data as Row[]) ?? []);
+          if (error) return; // offline: keep showing the last known list
+          recipeCache.replaceAll(data as Row[]);
+          setRows(recipeCache.list());
         });
     }, []),
   );
 
   // Filters are built from what the user actually has: favorites, who taught it, dish types.
+  const all = useMemo(() => rows ?? [], [rows]);
   const filters = useMemo(() => {
-    const teachers = [...new Set(rows.map((r) => r.taught_by).filter(Boolean))] as string[];
-    const cats = [...new Set(rows.map((r) => r.category).filter(Boolean))].map((c) => CATEGORY_LABEL[c] ?? c);
+    const teachers = [...new Set(all.map((r) => r.taught_by).filter(Boolean))] as string[];
+    const cats = [...new Set(all.map((r) => r.category).filter(Boolean))].map((c) => CATEGORY_LABEL[c] ?? c);
     return ['All', 'Favorites', ...teachers, ...cats];
-  }, [rows]);
+  }, [all]);
 
   const shown = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return rows.filter((r) => {
+    return all.filter((r) => {
       if (filter === 'Favorites' && !r.is_favorite) return false;
       if (filter !== 'All' && filter !== 'Favorites' && r.taught_by !== filter && CATEGORY_LABEL[r.category] !== filter) return false;
       if (!q) return true;
       return r.title.toLowerCase().includes(q) || r.ingredients.some((i) => i.name.toLowerCase().includes(q));
     });
-  }, [rows, query, filter]);
+  }, [all, query, filter]);
 
   const recent = useMemo(
-    () => rows.filter((r) => r.last_cooked_at).sort((a, b) => b.last_cooked_at!.localeCompare(a.last_cooked_at!)).slice(0, 6),
-    [rows],
+    () => all.filter((r) => r.last_cooked_at).sort((a, b) => b.last_cooked_at!.localeCompare(a.last_cooked_at!)).slice(0, 6),
+    [all],
   );
 
   async function toggleFavorite(r: Row) {
-    setRows((rs) => rs.map((x) => (x.id === r.id ? { ...x, is_favorite: !x.is_favorite } : x)));
+    recipeCache.patch(r.id, { is_favorite: !r.is_favorite });
+    setRows(recipeCache.list());
     const { error } = await supabase.from('recipes').update({ is_favorite: !r.is_favorite }).eq('id', r.id);
     if (error) {
       setError(error.message);
-      setRows((rs) => rs.map((x) => (x.id === r.id ? { ...x, is_favorite: r.is_favorite } : x)));
+      recipeCache.patch(r.id, { is_favorite: r.is_favorite });
+      setRows(recipeCache.list());
     }
   }
 
@@ -102,7 +102,7 @@ export default function Home() {
               <AddTile icon="youtube" label="Video" soon />
             </View>
 
-            {rows.length > 0 && (
+            {all.length > 0 && (
               <>
                 <View style={s.search}>
                   <MaterialCommunityIcons name="magnify" size={22} color={color.muted} />
@@ -137,14 +137,18 @@ export default function Home() {
               </>
             )}
 
-            {rows.length > 0 && <Text style={s.h2}>{browsing ? 'All recipes' : `${shown.length} found`}</Text>}
+            {all.length > 0 && <Text style={s.h2}>{browsing ? 'All recipes' : `${shown.length} found`}</Text>}
             {error && <Text style={{ color: color.danger }}>{error}</Text>}
           </View>
         }
         ListEmptyComponent={
+          rows === null ? (
+            <ActivityIndicator size="large" color={color.accent} style={{ marginTop: 32 }} />
+          ) : (
           <Text style={s.empty}>
             {rows.length ? 'Nothing matches. Try another word or filter.' : 'Every recipe here is a memory.\nStart with the one you miss most.'}
           </Text>
+          )
         }
         renderItem={({ item }) => (
           <Pressable style={s.card} onPress={() => router.push(`/recipe/${item.id}`)}>

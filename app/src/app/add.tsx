@@ -1,16 +1,19 @@
 import { router } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ActivityIndicator, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { RecipeBody } from '@/components/RecipeBody';
 import { Btn, Chip } from '@/components/ui';
 import { LANGUAGES, TEACHERS } from '@/lib/labels';
 import { prefs } from '@/lib/prefs';
+import { RECIPE_COLUMNS, recipeCache, type SavedRecipe } from '@/lib/recipeCache';
 import { type Recipe, RecipeSchema } from '@/lib/recipeSchema';
 import { supabase } from '@/lib/supabase';
 import { color, size } from '@/lib/theme';
 
 const OTHER = 'Someone else';
+// The AI takes ~4s: show progress so the wait feels shorter and alive.
+const STAGES = ["Reading what Mom said…", 'Putting the steps in order…', 'Working out the timings…', 'Almost done…'];
 
 export default function AddRecipe() {
   const [text, setText] = useState('');
@@ -21,9 +24,17 @@ export default function AddRecipe() {
   const [otherName, setOtherName] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [stage, setStage] = useState(0);
+
+  useEffect(() => {
+    if (!busy || recipe) return;
+    const t = setInterval(() => setStage((n) => Math.min(n + 1, STAGES.length - 1)), 1500);
+    return () => clearInterval(t);
+  }, [busy, recipe]);
 
   async function parse() {
     if (!text.trim()) return setError('Paste or type the recipe first.');
+    setStage(0);
     setBusy(true);
     setError(null);
     const { data, error } = await supabase.functions.invoke('parse-recipe', { body: { text, language } });
@@ -43,10 +54,11 @@ export default function AddRecipe() {
     const { data, error } = await supabase
       .from('recipes')
       .insert({ ...recipe, source: 'text', raw_input: text, taught_by })
-      .select('id')
+      .select(RECIPE_COLUMNS) // the saved row seeds the cache so the recipe screen opens instantly
       .single();
     setBusy(false);
     if (error) return setError(error.message);
+    recipeCache.set(data as SavedRecipe);
     router.replace(`/recipe/${data.id}`);
   }
 
@@ -108,7 +120,7 @@ export default function AddRecipe() {
       {busy ? (
         <View style={{ alignItems: 'center', gap: 8 }}>
           <ActivityIndicator size="large" color={color.accent} />
-          <Text style={{ color: color.muted }}>{recipe ? 'Saving…' : 'Turning it into steps…'}</Text>
+          <Text style={{ color: color.muted }}>{recipe ? 'Saving…' : STAGES[stage]}</Text>
         </View>
       ) : recipe ? (
         <View style={{ gap: 10 }}>

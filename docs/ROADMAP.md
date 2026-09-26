@@ -79,3 +79,6 @@
 | 2026-09-26 | Sign-up and forgot-password answer the same for known and unknown emails; new passwords 8+ chars (login still accepts old 6-7) | Owner: no account enumeration, stronger passwords |
 | 2026-09-26 | Local Supabase in Docker for full UI tests (preview `app-web-local`, Mailpit for codes); production e2e with secret key | Owner chose both; login wall blocked verifying screens |
 | 2026-09-26 | Leaving a screen with no history goes home (`canGoBack` else replace '/'); keep-awake suppresses deactivate warnings | Found by local UI test: delete/exit from a link did nothing; web threw on exit |
+| 2026-09-26 | AI parse: `reasoning.effort = low` (was default) | Measured 13.5s -> ~4-5s; default spent ~1.5k hidden reasoning tokens; output quality checked equal on Hinglish + Gujarati |
+| 2026-09-26 | recipeCache: one client copy of recipes, persisted to device, cleared on logout; recipe/cook/after-save render from it and refresh in background | Open recipe / start cooking ~60 ms even with no network; no "no recipes" flash on cold start |
+| 2026-09-26 | parse-recipe: auth + limit checks in parallel, Server-Timing header; add screen shows staged progress text | Less wait, and the wait feels alive; timing visible in scripts/latency.check.mjs |
