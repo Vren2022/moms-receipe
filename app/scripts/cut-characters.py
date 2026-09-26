@@ -35,6 +35,54 @@ CROPS = {
 }
 
 
+def remove_sparkle(sheet: Image.Image) -> Image.Image:
+    """Undo the white 4-point sparkle stamped over son-jumping's waist.
+    It's white blended at ~31% opacity: original = (seen - 255*a) / (1 - a).
+    Which pixels it covers is found by checking which colour, un-blended or as-is, better matches the
+    drawing's own palette (sampled from a ring just outside the sparkle). The anti-aliased rim gets
+    per-pixel opacity; a 3x3 median then smooths only the repaired patch."""
+    from PIL import ImageFilter
+
+    A, (X0, Y0, X1, Y1), (CX, CY), R = 0.31, (2490, 1225, 2670, 1360), (2575, 1290), 62
+    img = np.array(sheet.convert("RGB")).astype(float)
+    box = img[Y0:Y1, X0:X1]
+    h, w = box.shape[:2]
+    yy, xx = np.mgrid[0:h, 0:w]
+    r = np.hypot(xx + X0 - CX, yy + Y0 - CY)
+    pal = np.unique((box[(r > R) & (r < R + 28)] // 6 * 6).astype(int), axis=0).astype(float)
+
+    def palette_dist(c):
+        return np.sqrt(((c[:, :, None, :] - pal[None, None]) ** 2).sum(-1).min(-1))
+
+    def unblend(a):
+        return (box - 255 * a) / (1 - a)
+
+    cand = unblend(A)
+    valid = (cand >= -8).all(-1)
+    core = valid & (palette_dist(cand) + 6 < palette_dist(box)) & (r < R)
+    m = core.astype(int)
+    nb = sum(np.roll(np.roll(m, dy, 0), dx, 1) for dy in (-1, 0, 1) for dx in (-1, 0, 1)) - m
+    core = (core | ((nb >= 6) & valid & (r < R))) & ~((nb <= 1) & core)  # fill pinholes, drop specks
+
+    near = core.copy()
+    for _ in range(3):
+        near |= np.roll(near, 1, 0) | np.roll(near, -1, 0) | np.roll(near, 1, 1) | np.roll(near, -1, 1)
+    best_a, best_d = np.zeros((h, w)), np.full((h, w), np.inf)
+    for a in np.linspace(0, 0.36, 13):
+        c = unblend(a)
+        d = palette_dist(c) + 40 * a * ~core  # on the rim, prefer leaving pixels alone
+        d[~(c >= -8).all(-1)] = np.inf
+        better = d < best_d
+        best_d[better], best_a[better] = d[better], a
+    best_a[~near] = 0
+    best_a[core] = A
+    out = np.clip((box - 255 * best_a[..., None]) / (1 - best_a[..., None]), 0, 255)
+    med = np.array(Image.fromarray(out.astype(np.uint8)).filter(ImageFilter.MedianFilter(3))).astype(float)
+    out[near] = med[near]
+    img[Y0:Y1, X0:X1] = out
+    return Image.fromarray(img.astype(np.uint8))
+
+
 def remove_bg(img: Image.Image) -> Image.Image:
     """Flood-fill background connected to the border -> transparent.
     Background = light and low-saturation: white paper plus the soft lavender floor shadows.
@@ -62,7 +110,7 @@ def remove_bg(img: Image.Image) -> Image.Image:
 
 
 os.makedirs(OUT, exist_ok=True)
-sheet = Image.open(SRC)
+sheet = remove_sparkle(Image.open(SRC))
 print("sheet", sheet.size)
 cuts = {}
 for name, (box, max_size) in CROPS.items():
