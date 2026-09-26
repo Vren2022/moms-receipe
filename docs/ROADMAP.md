@@ -2,7 +2,7 @@
 
 **Current:** Phase 1 — text → recipe (in progress)
 **Supabase project:** `mjbtaexynymwfjpzpdnz` (https://mjbtaexynymwfjpzpdnz.supabase.co). NOT LoopWell.
-**Next step:** give Claude access to it (connector or CLI login), then: apply migration, enable anonymous sign-ins, set `OPENROUTER_API_KEY` secret, deploy `parse-recipe`, fill `app/.env`, test on phone.
+**Next step:** owner enables Anonymous sign-ins + sets `OPENROUTER_API_KEY` function secret in the dashboard → run `cd app && node --env-file=.env scripts/e2e.check.mjs` → test on phone → Phase 2.
 
 ## Phases
 - [x] **0. Context** — AGENTS.md, CLAUDE.md, ROADMAP, git
@@ -11,8 +11,11 @@
   - [x] recipe schema (zod)
   - [x] screens: list / add / recipe
   - [x] migration + parse-recipe function written (not yet applied/deployed)
-  - [ ] Supabase project linked, migration applied
-  - [ ] Edge function deployed + `OPENROUTER_API_KEY` secret set
+  - [x] Supabase project linked, migration applied, security advisors clean
+  - [x] Edge function deployed (v2: rejects non-user callers)
+  - [ ] Anonymous sign-ins enabled (dashboard)
+  - [ ] `OPENROUTER_API_KEY` function secret set (dashboard)
+  - [ ] e2e check passes (`app/scripts/e2e.check.mjs`)
   - [ ] Tested on phone with Hinglish + Gujarati samples
 - [ ] **2. Cook mode** — one step per screen, per-step timers, local notifications, keep-awake, "next time" notes
 - [ ] **3. Voice** — record/upload audio → Storage → Edge Function → audio-capable model (Gemini via OpenRouter) → same JSON. Note: live call recording is blocked on iOS/most Android; accept any audio file (second device, call-recorder file, or user re-telling).
@@ -33,3 +36,4 @@
 | 2026-09-25 | Git + GitHub, commit per phase | Owner choice |
 | 2026-09-25 | Don't use LoopWell Supabase project | Owner: it belongs to another repo; this app gets its own |
 | 2026-09-25 | Model `google/gemini-3.8-flash` via OpenRouter | Cheap, multilingual, accepts audio (Phase 3) |
+| 2026-09-26 | parse-recipe requires a real user JWT, not just the anon key | Public anon key alone must not spend AI credit; rate limit deferred |

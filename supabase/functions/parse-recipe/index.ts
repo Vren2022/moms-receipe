@@ -1,5 +1,8 @@
 // Raw recipe text (any Indian language) -> recipe JSON (see AGENTS.md contract).
+import { createClient } from 'npm:@supabase/supabase-js@2';
 import { z } from 'npm:zod@4';
+
+const supabase = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_ANON_KEY')!);
 
 const MODEL = 'google/gemini-3.8-flash'; // audio-capable too, reused in Phase 3
 
@@ -58,13 +61,22 @@ const json = (body: unknown, status = 200) =>
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: cors });
 
+  // verify_jwt also accepts the public anon key; require a real signed-in (incl. anonymous) user so the key can't burn AI credit.
+  // ponytail: no per-user rate limit yet; add one if anon sign-ups get abused
+  const token = req.headers.get('Authorization')?.replace('Bearer ', '') ?? '';
+  const { data: auth } = await supabase.auth.getUser(token);
+  if (!auth.user) return json({ error: 'sign in required' }, 401);
+
   const { text, language = 'Same as input' } = await req.json().catch(() => ({}));
   if (typeof text !== 'string' || !text.trim()) return json({ error: 'text is required' }, 400);
   if (text.length > 20000) return json({ error: 'text too long' }, 413);
 
+  const key = Deno.env.get('OPENROUTER_API_KEY');
+  if (!key) return json({ error: 'OPENROUTER_API_KEY secret is not set on the Supabase project' }, 500);
+
   const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
     method: 'POST',
-    headers: { Authorization: `Bearer ${Deno.env.get('OPENROUTER_API_KEY')}`, 'Content-Type': 'application/json' },
+    headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({
       model: MODEL,
       response_format: { type: 'json_object' },

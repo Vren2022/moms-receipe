@@ -53,6 +53,7 @@ Big text (cook-step text ≥ 24pt), big tap targets (messy hands), high contrast
 ## Run / verify
 - App: copy `app/.env.example` → `app/.env`, fill Supabase URL + publishable key, then `cd app && npx expo start` → scan with Expo Go.
 - Checks: `cd app && npx tsc --noEmit && npx expo lint && npx tsx src/lib/scale.check.ts`
+- E2E (real Supabase + AI): `cd app && node --env-file=.env scripts/e2e.check.mjs`
 - Supabase: enable **Anonymous sign-ins** (Auth → Providers). Migrations in `supabase/migrations/`.
 - AI model: one constant `MODEL` in `supabase/functions/parse-recipe/index.ts`.
 - Edge function deploy: Supabase MCP `deploy_edge_function` or `supabase functions deploy parse-recipe`.
