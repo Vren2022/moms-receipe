@@ -1,7 +1,8 @@
 # Roadmap
 
 **Current:** Phase 1 — text → recipe (in progress)
-**Next step:** owner creates a dedicated Supabase project (NOT LoopWell — that belongs to another repo), then: apply migration, enable anonymous sign-ins, set `OPENROUTER_API_KEY` secret, deploy `parse-recipe`, fill `app/.env`, test on phone.
+**Supabase project:** `mjbtaexynymwfjpzpdnz` (https://mjbtaexynymwfjpzpdnz.supabase.co). NOT LoopWell.
+**Next step:** give Claude access to it (connector or CLI login), then: apply migration, enable anonymous sign-ins, set `OPENROUTER_API_KEY` secret, deploy `parse-recipe`, fill `app/.env`, test on phone.
 
 ## Phases
 - [x] **0. Context** — AGENTS.md, CLAUDE.md, ROADMAP, git
