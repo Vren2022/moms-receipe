@@ -28,9 +28,10 @@ AppState.addEventListener('change', (state) => {
 // First time: name + email + password. Returns false when the email must be confirmed with a code first.
 export async function signUp(name: string, email: string, password: string) {
   const { data, error } = await supabase.auth.signUp({ email, password, options: { data: { name } } });
+  if (error && /already registered/i.test(error.message)) return false; // only happens with email confirmation off
   if (error) throw error;
-  // Supabase hides "already registered" (no identities, no session) to prevent email enumeration.
-  if (data.user && !data.user.identities?.length) throw new Error('This email already has an account. Please log in.');
+  // Existing email: Supabase returns a user with no identities and sends nothing. We deliberately answer the
+  // same as for a new email ("check your email") so sign-up can't be used to find out who has an account.
   return !!data.session;
 }
 
@@ -59,7 +60,8 @@ export async function signInWithGoogle() {
 // Email code: confirms a new account, and doubles as "forgot password".
 export async function sendCode(email: string) {
   const { error } = await supabase.auth.signInWithOtp({ email, options: { shouldCreateUser: false } });
-  if (error) throw error;
+  // Unknown email -> "Signups not allowed for otp". Swallow it so "forgot password" doesn't reveal who has an account.
+  if (error && error.code !== 'otp_disabled' && !/signups? not allowed/i.test(error.message)) throw error;
 }
 
 export async function verifyCode(email: string, token: string) {

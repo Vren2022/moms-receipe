@@ -27,7 +27,7 @@ export default function Account() {
 
   // For "forgot password" (logged in with a code) and Google users who want a password too.
   async function onSavePassword() {
-    if (newPassword.length < 6) return setError('Password needs at least 6 characters');
+    if (newPassword.length < 8) return setError('Password needs at least 8 characters');
     setError(null);
     try {
       await setPassword(newPassword);
@@ -63,7 +63,7 @@ export default function Account() {
           setNewPassword(t);
           setSaved(false);
         }}
-        placeholder="6+ characters"
+        placeholder="8+ characters"
         placeholderTextColor={color.muted}
         secureTextEntry
         autoCapitalize="none"

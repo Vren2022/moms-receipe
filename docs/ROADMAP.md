@@ -75,3 +75,4 @@
 | 2026-09-26 | Step shows amounts of ingredients its text mentions (name / first-word match) | Step text has no amounts by design; cook shouldn't scroll back |
 | 2026-09-26 | Verification pass required for every feature (AGENTS.md checklist) | Owner rule: no bugs, crash paths, slowdowns or security holes |
 | 2026-09-26 | Hardening: recipe JSON shape/size + text caps as DB constraints; ai_calls pruned per call; parse-recipe allow-lists language, 60s AI timeout, no provider error bodies to client; cook mode cancels alarms on exit/races, exit on error, clamps servings param, saves note safely | Findings from the first verification pass |
+| 2026-09-26 | Sign-up and forgot-password answer the same for known and unknown emails; new passwords 8+ chars (login still accepts old 6-7) | Owner: no account enumeration, stronger passwords |

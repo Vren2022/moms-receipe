@@ -61,7 +61,9 @@ export default function Login() {
         go('verify');
       });
     if (mode === 'signup' && !name.trim()) return setError('Please enter your name');
-    if (password.length < 6) return setError('Password needs at least 6 characters');
+    // 8+ for new passwords only; login accepts older 6-7 char passwords so nobody gets locked out.
+    if (mode === 'signup' && password.length < 8) return setError('Password needs at least 8 characters');
+    if (!password) return setError('Please enter your password');
     if (mode === 'login') return run(() => signIn(cleanEmail, password));
     run(async () => {
       const loggedIn = await signUp(name.trim(), cleanEmail, password);
@@ -77,7 +79,9 @@ export default function Login() {
         <ScrollView contentContainerStyle={s.body} keyboardShouldPersistTaps="handled">
           <Text style={s.title}>{TITLE[mode]}</Text>
           {mode === 'signup' && <Text style={s.sub}>Your recipes stay with you, even on a new phone.</Text>}
-          {mode === 'verify' && <Text style={s.sub}>We sent a code to {cleanEmail}</Text>}
+          {mode === 'verify' && (
+            <Text style={s.sub}>Check {cleanEmail} for a 6-digit code. No email after a minute? You may already have an account; log in instead.</Text>
+          )}
 
           {withPassword && (
             <>
@@ -114,7 +118,7 @@ export default function Login() {
               style={s.input}
               value={password}
               onChangeText={setPassword}
-              placeholder={mode === 'signup' ? 'Make a password (6+ characters)' : 'Password'}
+              placeholder={mode === 'signup' ? 'Make a password (8+ characters)' : 'Password'}
               placeholderTextColor={color.muted}
               secureTextEntry
               autoCapitalize="none"
