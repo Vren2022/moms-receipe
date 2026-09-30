@@ -18,7 +18,7 @@ const H = 360; // whole machine
 const RAIL = 200; // centre of the rail, in paper coordinates; the current line sits just above it
 const FONT = 20;
 const LINE = 30;
-const PAD = 32; // = half the carriage, so the carriage never leaves the paper
+const PAD = 22;
 const CHAR_W = FONT * 0.575; // ponytail: measured advance of Special Elite (web); approx; only used where onTextLayout is missing (web)
 const INK = '#2A2521';
 const PAPER = '#F1EADB';
@@ -45,9 +45,9 @@ export function Typewriter({ value, onChangeText, maxLength, placeholder }: Prop
   const carriage = useSharedValue(0);
   const jolt = useSharedValue(0);
 
-  // Typing point: end of the last line (left-aligned, like a real typewriter).
+  // Typing point: right end of the centred last line.
   const lineW = nativeLineW ?? lastLineChars(value, Math.floor((paperW - 2 * PAD) / CHAR_W)) * CHAR_W;
-  const x = Math.min(paperW - PAD, PAD + lineW + CHAR_W / 2); // over the cursor
+  const x = Math.min(paperW - 30, Math.max(30, (paperW + lineW) / 2));
 
   useEffect(() => {
     carriage.set(reduceMotion ? x : withTiming(x, { duration: 90 }));
@@ -196,7 +196,7 @@ const s = StyleSheet.create({
   machine: { height: H, borderRadius: 22, backgroundColor: '#1E1B18', paddingTop: 30, paddingHorizontal: 12, overflow: 'hidden' },
   paper: { flex: 1, backgroundColor: PAPER, borderTopLeftRadius: 18, borderTopRightRadius: 18, overflow: 'hidden' },
   sheet: { position: 'absolute', top: 0, left: 0, right: 0 },
-  text: { fontSize: FONT, lineHeight: LINE, color: INK, paddingHorizontal: PAD },
+  text: { fontSize: FONT, lineHeight: LINE, color: INK, textAlign: 'center', paddingHorizontal: PAD },
   rail: { position: 'absolute', top: RAIL - 7, left: 0, right: 0, height: 14, backgroundColor: '#2B2B2E', borderTopWidth: 3, borderTopColor: '#5A5A60' },
   cap: { position: 'absolute', top: -7, width: 14, height: 24, borderRadius: 3, backgroundColor: '#1A1A1C' },
   carriage: { position: 'absolute', top: RAIL - 29, left: 0, width: 64, alignItems: 'center' },

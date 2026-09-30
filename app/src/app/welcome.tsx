@@ -8,7 +8,8 @@ import Animated, { FadeIn, FadeInDown, FadeInUp, useAnimatedStyle, useSharedValu
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { STORY_MS, StoryFlipbook } from '@/components/StoryFlipbook';
-import { Btn } from '@/components/ui';
+import { Btn, Chip } from '@/components/ui';
+import { LANGUAGES } from '@/lib/labels';
 import { prefs } from '@/lib/prefs';
 import { color, size } from '@/lib/theme';
 
@@ -18,6 +19,7 @@ const LAST = BEAT_MS.length - 1;
 
 export default function Welcome() {
   const [beat, setBeat] = useState(0);
+  const [language, setLanguage] = useState(prefs.language());
 
   useEffect(() => {
     if (beat === LAST || beat === STORY) return;
@@ -26,6 +28,7 @@ export default function Welcome() {
   }, [beat]);
 
   function finish() {
+    prefs.setLanguage(language);
     prefs.setOnboarded();
     router.replace('/login');
   }
@@ -56,7 +59,7 @@ export default function Welcome() {
           {beat === 1 && <TheChaos />}
           {beat === 2 && <TheMagic />}
           {beat === STORY && <Together onDone={() => setBeat(STORY + 1)} />}
-          {beat === 4 && <ThePromise onStart={finish} />}
+          {beat === 4 && <ThePromise language={language} setLanguage={setLanguage} onStart={finish} />}
         </View>
       </Pressable>
     </SafeAreaView>
@@ -172,7 +175,7 @@ function Together({ onDone }: { onDone: () => void }) {
   );
 }
 
-function ThePromise({ onStart }: { onStart: () => void }) {
+function ThePromise({ language, setLanguage, onStart }: { language: string; setLanguage: (l: string) => void; onStart: () => void }) {
   return (
     <View style={[s.beat, { justifyContent: 'flex-start' }]}>
       <Animated.View entering={ZoomIn.duration(500)} style={s.logo}>
@@ -187,6 +190,14 @@ function ThePromise({ onStart }: { onStart: () => void }) {
       <Animated.View entering={FadeIn.delay(900)} style={s.trust}>
         <MaterialCommunityIcons name="shield-lock-outline" size={20} color={color.veg} />
         <Text style={s.trustText}>{"Private to you. No ads, no noise — just your family's recipes."}</Text>
+      </Animated.View>
+      <Animated.View entering={FadeIn.delay(1100)} style={{ gap: 8 }}>
+        <Text style={s.chooseLabel}>Show recipes in</Text>
+        <View style={s.chips}>
+          {LANGUAGES.map((l) => (
+            <Chip key={l} label={l} on={l === language} onPress={() => setLanguage(l)} />
+          ))}
+        </View>
       </Animated.View>
       <View style={{ flex: 1 }} />
       <Animated.View entering={FadeInUp.delay(1300)} style={{ gap: 4 }}>
@@ -223,4 +234,6 @@ const s = StyleSheet.create({
   logo: { alignSelf: 'center', width: 150, height: 150, borderRadius: 75, backgroundColor: color.soft, alignItems: 'center', justifyContent: 'center', marginTop: 12 },
   trust: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: color.card, borderRadius: size.radius, borderWidth: 1, borderColor: color.border, padding: 12 },
   trustText: { flex: 1, fontSize: 15, color: color.text },
+  chooseLabel: { fontSize: 16, fontWeight: '700', color: color.text },
+  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
 });
