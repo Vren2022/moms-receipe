@@ -11,6 +11,7 @@ import { STORY_MS, StoryFlipbook } from '@/components/StoryFlipbook';
 import { Btn, Chip } from '@/components/ui';
 import { LANGUAGES } from '@/lib/labels';
 import { prefs } from '@/lib/prefs';
+import { supabase } from '@/lib/supabase';
 import { color, size } from '@/lib/theme';
 
 const BEAT_MS = [5000, 5000, 5500, STORY_MS, 0]; // 0 = last beat waits for the user
@@ -27,10 +28,12 @@ export default function Welcome() {
     return () => clearTimeout(t);
   }, [beat]);
 
-  function finish() {
+  async function finish() {
     prefs.setLanguage(language);
     prefs.setOnboarded();
-    router.replace('/login');
+    // Already signed in (e.g. welcome replayed): /login is guarded off for signed-in users, so replace() would do nothing.
+    const { data } = await supabase.auth.getSession();
+    router.replace(data.session && !data.session.user.is_anonymous ? '/' : '/login');
   }
 
   return (
