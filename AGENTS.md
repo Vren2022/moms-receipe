@@ -73,6 +73,7 @@ Owner rule: try to break it, don't just build it. Fix small findings now; bring 
 - App: copy `app/.env.example` → `app/.env`, fill Supabase URL + publishable key, then `cd app && npx expo start` → scan with Expo Go.
 - Checks: `cd app && npx tsc --noEmit && npx expo lint && npx tsx src/lib/scale.check.ts && npx tsx src/lib/cook.check.ts && npx tsx src/lib/typewriter.check.ts`
 - E2E (real Supabase + AI): `cd app && node --env-file=.env scripts/e2e.check.mjs` (needs `SUPABASE_SECRET_KEY` in app/.env)
+- Languages (real AI, ~11 calls): `cd app && node --no-warnings --env-file=.env scripts/languages.check.mjs` — every output language: right script + ISO code, zod-valid, same servings/timings, saves
 - Full UI testing behind login: local Supabase in Docker (`npx supabase start`), preview `app-web-local` (port 8084), codes in Mailpit :54324. See `supabase/LOCAL_TESTING.md`.
 - Supabase auth: email+password (name in user_metadata), Google (browser OAuth, PKCE), 6-digit email code for confirm/forgot (templates must show `{{ .Token }}`); custom SMTP for real use. Owner user list: `select * from admin.users` in the SQL editor. Migrations in `supabase/migrations/`.
 - E2E needs `SUPABASE_SECRET_KEY` in `app/.env` (test only, never `EXPO_PUBLIC_`).
