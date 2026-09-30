@@ -1,8 +1,9 @@
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { RecipeBody } from '@/components/RecipeBody';
+import { Typewriter } from '@/components/Typewriter';
 import { Btn, Chip } from '@/components/ui';
 import { LANGUAGES, TEACHERS } from '@/lib/labels';
 import { prefs } from '@/lib/prefs';
@@ -12,6 +13,8 @@ import { supabase } from '@/lib/supabase';
 import { color, size } from '@/lib/theme';
 
 const OTHER = 'Someone else';
+const MAX = 20000;
+const PLACEHOLDER = 'e.g. Pehle tel garam karo, jeera daalo, phir pyaaz golden hone tak…';
 // The AI takes ~4s: show progress so the wait feels shorter and alive.
 const STAGES = ["Reading what Mom said…", 'Putting the steps in order…', 'Working out the timings…', 'Almost done…'];
 
@@ -25,12 +28,18 @@ export default function AddRecipe() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [stage, setStage] = useState(0);
+  const [plain, setPlain] = useState(false); // typewriter by default; plain box to fix text in the middle
 
   useEffect(() => {
     if (!busy || recipe) return;
     const t = setInterval(() => setStage((n) => Math.min(n + 1, STAGES.length - 1)), 1500);
     return () => clearInterval(t);
   }, [busy, recipe]);
+
+  function onText(t: string) {
+    setText(t);
+    setError(null);
+  }
 
   async function parse() {
     if (!text.trim()) return setError('Paste or type the recipe first.');
@@ -67,19 +76,23 @@ export default function AddRecipe() {
       {!recipe ? (
         <>
           <Text style={s.label}>What did Mom (or the video) say?</Text>
-          <TextInput
-            style={s.input}
-            multiline
-            maxLength={20000}
-            value={text}
-            onChangeText={(t) => {
-              setText(t);
-              setError(null);
-            }}
-            placeholder="e.g. Pehle tel garam karo, jeera daalo, phir pyaaz golden hone tak…"
-            placeholderTextColor={color.muted}
-            textAlignVertical="top"
-          />
+          {plain ? (
+            <TextInput
+              style={s.input}
+              multiline
+              maxLength={MAX}
+              value={text}
+              onChangeText={onText}
+              placeholder={PLACEHOLDER}
+              placeholderTextColor={color.muted}
+              textAlignVertical="top"
+            />
+          ) : (
+            <Typewriter value={text} onChangeText={onText} maxLength={MAX} placeholder={PLACEHOLDER} />
+          )}
+          <Pressable onPress={() => setPlain((p) => !p)} style={s.switch} accessibilityRole="button">
+            <Text style={s.switchText}>{plain ? 'Use the typewriter' : 'Edit normally'}</Text>
+          </Pressable>
           <Text style={s.label}>Show the recipe in</Text>
           <View style={s.chips}>
             {LANGUAGES.map((l) => (
@@ -139,6 +152,8 @@ const s = StyleSheet.create({
   title: { fontSize: size.title, fontWeight: '800', color: color.text },
   input: { minHeight: 220, backgroundColor: color.card, borderWidth: 1, borderColor: color.border, borderRadius: size.radius, padding: size.pad, fontSize: size.body, color: color.text },
   nameInput: { minHeight: 50, backgroundColor: color.card, borderWidth: 1, borderColor: color.border, borderRadius: size.radius, paddingHorizontal: size.pad, fontSize: size.body, color: color.text },
+  switch: { alignSelf: 'flex-end', minHeight: 44, justifyContent: 'center', paddingHorizontal: 4, marginTop: -8 },
+  switchText: { color: color.accent, fontSize: 16, fontWeight: '700' },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   teacherBox: { gap: 10, backgroundColor: color.soft, borderRadius: size.radius, padding: size.pad },
 });

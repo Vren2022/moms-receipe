@@ -21,6 +21,8 @@ export const prefs = {
   setLanguage: (l: string) => set('language', l),
   readAloud: () => get('readAloud') === '1',
   setReadAloud: (on: boolean) => set('readAloud', on ? '1' : '0'),
+  typewriterSound: () => get('typewriterSound') !== '0', // on by default
+  setTypewriterSound: (on: boolean) => set('typewriterSound', on ? '1' : '0'),
   // Last known recipe list (see recipeCache). Corrupt/missing -> null, never a crash.
   savedRecipes<T>(): T | null {
     try {

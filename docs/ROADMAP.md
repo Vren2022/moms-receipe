@@ -27,6 +27,8 @@
   - [x] Gaps: delete recipe, edit recipe (RecipeEditor, zod-validated), 30 AI calls/user/24h (`claim_ai_call`, parse-recipe v5), privacy policy (docs/PRIVACY.md, linked from login + account)
   - [ ] Owner: review docs/PRIVACY.md (public once pushed); use its GitHub URL on the Google OAuth consent screen
   - [ ] Step B: Apple (required on iOS store build with Google), phone OTP (paid SMS + India DLT)
+- [ ] **1.7 Typewriter input** (2026-09-30) — Add screen text box is a typewriter: paper feeds up to the rail, carriage follows the typing point, clack + ding + haptic (mute remembered), paste instant, "Edit normally" plain box; typewriter.check.ts
+  - [ ] Phone test in Expo Go: sound, haptic, Hindi/Gujarati keyboards, carriage position (onTextLayout)
 - [ ] **2. Cook mode** — one step per screen, per-step timers, local notifications, keep-awake, "next time" notes
   - [x] cook/[id]: get ready (scaled ingredients, prep checklist, last note) → one step per screen (30pt, step's ingredients with amounts, heat) → done (notes + last_cooked_at)
   - [x] timers auto-start per step, run in parallel, +1 min / stop, local notification + sound; keep-awake; read-aloud toggle (expo-speech, remembered)
@@ -97,3 +99,5 @@
 | 2026-09-26 | Launch on Google Play first; existing personal account from before Nov 2023 (no 12-tester rule); package `app.nuskha`; Google sign-in at launch; public contact virenvaviya2022@gmail.com | Owner choices |
 | 2026-09-26 | Free Supabase + daily GitHub Actions keep-alive; Gmail SMTP for auth emails (Resend needs a domain) | Owner: $0 for now; revisit Pro / own domain with real users |
 | 2026-09-26 | EAS env vars only for EXPO_PUBLIC_*; .env never uploaded (gitignored); blocked SYSTEM_ALERT_WINDOW + external storage permissions | Secrets stay local; fewer scary permissions for Play review and users |
+| 2026-09-30 | Typewriter recipe input on Add screen (default on): hidden TextInput does the typing, we draw paper/rail/carriage; backspace really erases; clack + ding + haptic with remembered mute; cursor always at end, "Edit normally" for mid-text fixes | Owner wanted a typewriter feel (reference image); hidden input keeps Indian-language IMEs, paste and autocorrect working |
+| 2026-09-30 | Special Elite font (OFL), synthesised WAVs (scripts/typewriter-sounds.mjs), expo-audio with mic/record/background playback OFF in its config plugin | No licence questions; no new scary Play permissions. Phase 3 voice must turn the mic back on |
