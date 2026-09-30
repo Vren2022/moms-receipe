@@ -5,8 +5,7 @@ import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, 
 import { RecipeBody } from '@/components/RecipeBody';
 import { Typewriter } from '@/components/Typewriter';
 import { Btn, Chip } from '@/components/ui';
-import { LANGUAGES, TEACHERS } from '@/lib/labels';
-import { prefs } from '@/lib/prefs';
+import { TEACHERS } from '@/lib/labels';
 import { RECIPE_COLUMNS, recipeCache, type SavedRecipe } from '@/lib/recipeCache';
 import { type Recipe, RecipeSchema } from '@/lib/recipeSchema';
 import { supabase } from '@/lib/supabase';
@@ -20,7 +19,6 @@ const STAGES = ["Reading what Mom said…", 'Putting the steps in order…', 'Wo
 
 export default function AddRecipe() {
   const [text, setText] = useState('');
-  const [language, setLanguage] = useState(prefs.language());
   const [recipe, setRecipe] = useState<Recipe | null>(null);
   const [servings, setServings] = useState(2);
   const [teacher, setTeacher] = useState('Mom');
@@ -46,7 +44,8 @@ export default function AddRecipe() {
     setStage(0);
     setBusy(true);
     setError(null);
-    const { data, error } = await supabase.functions.invoke('parse-recipe', { body: { text, language } });
+    // No language sent: the recipe comes back in the language it was typed in (English / Hindi / Hinglish).
+    const { data, error } = await supabase.functions.invoke('parse-recipe', { body: { text } });
     setBusy(false);
     const parsed = RecipeSchema.safeParse(data); // never trust AI output blindly
     if ((error as any)?.context?.status === 429) return setError("You've made 30 recipes in the last day. Please try again tomorrow.");
@@ -93,12 +92,6 @@ export default function AddRecipe() {
           <Pressable onPress={() => setPlain((p) => !p)} style={s.switch} accessibilityRole="button">
             <Text style={s.switchText}>{plain ? 'Use the typewriter' : 'Edit normally'}</Text>
           </Pressable>
-          <Text style={s.label}>Show the recipe in</Text>
-          <View style={s.chips}>
-            {LANGUAGES.map((l) => (
-              <Chip key={l} label={l} on={l === language} onPress={() => setLanguage(l)} />
-            ))}
-          </View>
         </>
       ) : (
         <>

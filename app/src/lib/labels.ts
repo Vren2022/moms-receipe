@@ -1,7 +1,6 @@
 import type { Recipe } from './recipeSchema';
 
 // Mirrored (allow-list) in supabase/functions/parse-recipe/index.ts — change both together.
-export const LANGUAGES = ['Same as input', 'English', 'Hindi', 'Gujarati', 'Marathi', 'Tamil', 'Telugu', 'Bengali'];
 export const PRIVACY_URL = 'https://github.com/Vren2022/moms-receipe/blob/main/docs/PRIVACY.md';
 
 export const TEACHERS = ['Mom', 'Nani', 'Dadi', 'YouTube', 'Me'];

@@ -12,7 +12,7 @@ export function keyKind(prev: string, next: string): Key {
   return next.endsWith('\n') ? 'newline' : 'type';
 }
 
-// Width (in chars) of the last visual line, for placing the carriage on centred text.
+// Width (in chars) of the last visual line, for placing the carriage.
 // ponytail: wraps by char count, not by word like the real Text does; used only on web where onTextLayout is missing.
 export function lastLineChars(text: string, charsPerLine: number) {
   const para = text.slice(text.lastIndexOf('\n') + 1).length;
